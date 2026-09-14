@@ -1,0 +1,8 @@
+DEBUG=True
+SECRET_KEY=5IjAeazlsmMn3xF-z4e5CRJBhoxIp6Dz_evQgIVNZ9q9hI5mm7DnvODFweclFFvv
+DB_ENGINE=sqlite3
+DB_NAME=/Users/heinerpinares/Documents/4DX/work/local.sqlite3
+AUTO_MIGRATE=true
+ALLOWED_HOSTS=localhost,127.0.0.1,testserver
+CLOSED_STATUS_CODE=T
+DUE_SOON_DAYS=7

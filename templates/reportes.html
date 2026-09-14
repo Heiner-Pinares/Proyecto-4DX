@@ -1,0 +1,13 @@
+{% extends 'base.html' %}{% block content %}<p class="intro">Genera documentos ejecutivos y comparte la información de seguimiento.</p>{% include 'filters.html' %}<div class="detail-grid"><section class="panel padded"><div class="report-icon">W</div><h2>Reporte ejecutivo</h2><p>Compromisos agrupados por tema e iniciativa, con fechas, reprogramaciones, motivos y observaciones.</p><form method="get" action="{% url 'exportar' 'docx' %}">{% for key, value in request.GET.items %}{% if key != 'corte' %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}{% endfor %}<label>Fecha de corte<input type="date" name="corte" value="{{ today }}" required></label><p class="muted">Evalúa el plazo a la fecha de corte usando los datos actuales. No reconstruye estados históricos.</p><button class="button">↓ Generar reporte ejecutivo</button></form></section><section class="panel padded"><div class="report-icon">X</div><h2>Base de seguimiento</h2><p>Exporta las 17 columnas originales en un archivo Excel compatible con el formato legacy.</p><p class="muted">Ambas exportaciones respetan los filtros aplicados arriba.</p><a class="button secondary" href="{% url 'exportar' 'xlsx' %}?{{ request.GET.urlencode }}">↓ Exportar Excel</a></section></div><section class="panel padded" style="margin-top:24px">
+<div class="report-icon">@</div><h2>Correo de seguimiento</h2>
+<p>Vista previa de los compromisos abiertos al corte seleccionado, con los filtros aplicados arriba. Puedes abrir el correo o descargar su versión HTML.</p>
+<form method="get" action="{% url 'reportes' %}">
+{% for key, value in request.GET.items %}{% if key != 'corte' and key != 'descargar' %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}{% endfor %}
+<label>Fecha de corte del correo<input type="date" name="corte" value="{{ today }}" required></label>
+<div class="filter-actions"><button class="button">Actualizar vista previa</button>
+<a class="button secondary" target="_blank" rel="noopener" href="{% url 'correo_reporte' %}?{{ correo_query }}">Abrir correo HTML ↗</a>
+<a class="button secondary" href="{% url 'correo_reporte' %}?{{ correo_query }}&amp;descargar=1">Descargar HTML</a></div>
+</form>
+<p class="muted">Incluye pendientes actuales sin suspensión, con fecha de compromiso hasta el corte o sin fecha registrada. El plazo se evalúa con las fechas vigentes; no reconstruye estados históricos. Esta vista no envía correos.</p>
+<iframe title="Vista previa del correo de compromisos" src="{% url 'correo_reporte' %}?{{ correo_query }}" style="width:100%;height:780px;border:1px solid var(--border);border-radius:12px;background:white" loading="lazy"></iframe>
+</section>{% endblock %}
