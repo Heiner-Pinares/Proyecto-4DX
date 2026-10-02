@@ -1,5 +1,7 @@
 import json
 import base64
+import sys
+import types
 
 import pytest
 from django.contrib.auth.models import Group, User
@@ -125,6 +127,25 @@ def test_startup_verifies_and_migrates_oracle_automatically(monkeypatch):
         ("verificar_oracle", {}),
         ("init_portal", {}),
     ]
+
+
+def test_windows_server_starts_waitress_without_reexecuting_python(monkeypatch):
+    import run
+
+    received = {}
+    fake_waitress = types.ModuleType("waitress")
+    fake_waitress.serve = lambda application, **options: received.update(options)
+    monkeypatch.setitem(sys.modules, "waitress", fake_waitress)
+    monkeypatch.setattr(run.os, "name", "nt")
+    monkeypatch.setattr(
+        run.os,
+        "execv",
+        lambda *args: pytest.fail("Windows no debe ejecutar os.execv"),
+    )
+
+    run.serve_production()
+
+    assert received == {"host": "0.0.0.0", "port": 8000, "threads": 8}
 
 
 @pytest.mark.django_db

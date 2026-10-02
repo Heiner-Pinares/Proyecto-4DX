@@ -17,27 +17,29 @@ from config.settings import flag
 log = logging.getLogger(__name__)
 
 
-def production_server_command():
+def serve_production():
     """Usa un servidor WSGI compatible con el sistema operativo."""
     if os.name == "nt":
-        return [
+        # Ejecutar dentro del proceso evita que Windows divida rutas con espacios.
+        from waitress import serve
+        from config.wsgi import application
+
+        log.info("Portal disponible en http://0.0.0.0:8000")
+        serve(application, host="0.0.0.0", port=8000, threads=8)
+        return
+    os.execv(
+        sys.executable,
+        [
             sys.executable,
             "-m",
-            "waitress",
-            "--listen=0.0.0.0:8000",
-            "--threads=8",
+            "gunicorn",
             "config.wsgi:application",
-        ]
-    return [
-        sys.executable,
-        "-m",
-        "gunicorn",
-        "config.wsgi:application",
-        "--bind",
-        "0.0.0.0:8000",
-        "--workers",
-        "2",
-    ]
+            "--bind",
+            "0.0.0.0:8000",
+            "--workers",
+            "2",
+        ],
+    )
 
 
 def initialize():
@@ -76,4 +78,4 @@ if __name__ == "__main__":
         if flag("DEBUG"):
             call_command("runserver", "0.0.0.0:8000", use_reloader=False)
         else:
-            os.execv(sys.executable, production_server_command())
+            serve_production()
