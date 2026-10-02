@@ -7,7 +7,7 @@ Destinatarios fijos, tanto en encabezados como en el sobre sendmail:
 - Cc: c28171@claro.com.pe
 - Remitente: 4DX Facturación <4dx@claro.com.pe>
 
-Se adaptó el mecanismo SSH/sendmail del script entregado. El mensaje MIME se transmite por entrada estándar; no se suben archivos temporales ni se agregan los adjuntos del ejemplo. Las credenciales recibidas se guardaron únicamente en .env con permisos 600 mediante CORREO_SSH_HOST, CORREO_SSH_USER y CORREO_SSH_PASSWORD. Requiere acceso a la red corporativa o VPN y permiso para ejecutar sendmail en ese servidor.
+Se adaptó el mecanismo SSH/sendmail del script entregado. El mensaje MIME se transmite por entrada estándar; no se suben archivos temporales ni se agregan los adjuntos del ejemplo. El portal incluye la conexión solicitada como configuración predeterminada; `CORREO_SSH_HOST`, `CORREO_SSH_USER` y `CORREO_SSH_PASSWORD` permiten sustituirla desde `.env`. Requiere acceso a la red corporativa o VPN y permiso para ejecutar sendmail en ese servidor.
 
 SSH confía en la identidad presentada en la primera conexión al servidor configurado y la conserva en work/correo_known_hosts. Las conexiones posteriores rechazan una identidad cambiada. Los errores de conexión no muestran contraseñas.
 

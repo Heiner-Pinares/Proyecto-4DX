@@ -86,5 +86,7 @@ def test_timeout_does_not_expose_secret(client, setup):
 
 def test_template_does_not_expose_webhook(client, setup, settings):
     response=client.get('/reportes/?corte=2026-09-24')
-    assert b'Enviar recordatorio a Teams' in response.content
+    assert b'Enviar recordatorio por correo' in response.content
+    assert b'/reportes/correo/enviar/' in response.content
+    assert b'Enviar recordatorio a Teams' not in response.content
     assert settings.TEAMS_WEBHOOK_URL.encode() not in response.content

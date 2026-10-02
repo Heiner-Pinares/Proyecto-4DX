@@ -324,7 +324,6 @@ def indicadores(request):
 
 @login_required
 def reportes(request):
-    from .teams import configurado, token_envio
     from .correo import token_correo
     try:
         corte = date.fromisoformat(request.GET.get("corte") or timezone.localdate().isoformat())
@@ -340,8 +339,6 @@ def reportes(request):
             "title": "Reportes ejecutivos",
             "today": corte.isoformat(),
             "correo_query": params.urlencode(),
-            "teams_configurado": configurado(),
-            "teams_token": token_envio(request.user, params.urlencode()),
             "correo_token": token_correo(request.user, params.urlencode()),
             **filtros(request),
         },

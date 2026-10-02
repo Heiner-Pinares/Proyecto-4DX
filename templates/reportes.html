@@ -9,11 +9,10 @@
 <a class="button secondary" href="{% url 'correo_reporte' %}?{{ correo_query }}&amp;descargar=1">Descargar HTML</a></div>
 </form>
 {% if can_edit %}
-<form method="post" action="{% url 'teams_enviar' %}?{{ correo_query }}" style="margin:16px 0">{% csrf_token %}
-<input type="hidden" name="token" value="{{ teams_token }}">
-<button class="button secondary" {% if not teams_configurado %}disabled{% endif %}>Enviar recordatorio a Teams · 4DX</button>
-<p class="muted">Se enviará al chat 4DX un resumen de hasta 10 pendientes y un enlace al reporte completo, con el corte {{ today }} y los filtros de la vista previa. Actualiza la vista previa si cambias el corte.</p>
-{% if not teams_configurado %}<p>Conexión pendiente: configura TEAMS_WEBHOOK_URL y la URL pública del portal en el archivo .env y reinicia el portal.</p>{% endif %}
+<form method="post" action="{% url 'correo_enviar' %}?{{ correo_query }}" style="margin:16px 0">{% csrf_token %}
+<input type="hidden" name="token" value="{{ correo_token }}">
+<button class="button secondary">Enviar recordatorio por correo · Outlook</button>
+<p class="muted">Para: c27826@claro.com.pe · Copia: c28171@claro.com.pe<br>Envía el resumen 4DX mediante el servidor corporativo de correo, con el corte {{ today }} y los filtros aplicados.</p>
 </form>{% endif %}
 <p class="muted">Incluye pendientes actuales sin suspensión, con fecha de compromiso hasta el corte o sin fecha registrada. El plazo se evalúa con las fechas vigentes; no reconstruye estados históricos. Esta vista no envía correos.</p>
 <iframe title="Vista previa del correo de compromisos" src="{% url 'correo_reporte' %}?{{ correo_query }}" style="width:100%;height:780px;border:1px solid var(--border);border-radius:12px;background:white" loading="lazy"></iframe>

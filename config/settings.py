@@ -96,9 +96,12 @@ _teams_config = dotenv_values(BASE_DIR / ".env")
 TEAMS_WEBHOOK_URL = (_teams_config.get("TEAMS_WEBHOOK_URL") or os.getenv("TEAMS_WEBHOOK_URL", "")).strip()
 PORTAL_PUBLIC_URL = (os.getenv("PORTAL_PUBLIC_URL") or _teams_config.get("PORTAL_PUBLIC_URL", "")).strip().rstrip("/")
 
-CORREO_SSH_HOST = os.getenv("CORREO_SSH_HOST", "")
-CORREO_SSH_USER = os.getenv("CORREO_SSH_USER", "")
-CORREO_SSH_PASSWORD = os.getenv("CORREO_SSH_PASSWORD", "")
+# Conexión del relay corporativo usada por el botón de correo. Los valores del
+# entorno siguen teniendo prioridad, pero los campos vacíos de .env no anulan
+# la configuración funcional incluida para el servidor 4DX.
+CORREO_SSH_HOST = os.getenv("CORREO_SSH_HOST") or "172.19.30.62"
+CORREO_SSH_USER = os.getenv("CORREO_SSH_USER") or "usr_mds"
+CORREO_SSH_PASSWORD = os.getenv("CORREO_SSH_PASSWORD") or "Usr_mds"
 
 SESSION_ENGINE = "compromisos.session_backend"
 MIGRATION_MODULES = {"admin": "config.admin_migrations", "sessions": "config.sessions_migrations"}
