@@ -18,7 +18,7 @@ def oracle_env(**changes):
         "ORACLE_HOST": "scan-odscbio",
         "ORACLE_PORT": "1521",
         "ORACLE_SERVICE_NAME": "ODSCBIO",
-        "ORACLE_USER": "USRFACDOC",
+        "ORACLE_USER": "USRFACDOC[USRVALCBIO]",
         "ORACLE_PASSWORD": "secret",
     }
     values.update(changes)
@@ -28,11 +28,12 @@ def oracle_env(**changes):
 def test_oracle_uses_service_name_easy_connect_and_pool():
     config = database_config(oracle_env())
     assert config["ENGINE"] == "django.db.backends.oracle"
-    assert config["NAME"] == "scan-odscbio:1521/ODSCBIO"
-    assert config["USER"] == "USRFACDOC"
+    assert "(HOST=scan-odscbio)(PORT=1521)" in config["NAME"]
+    assert "(SERVER=DEDICATED)(SERVICE_NAME=ODSCBIO)" in config["NAME"]
+    assert config["USER"] == "USRFACDOC[USRVALCBIO]"
     assert config["PASSWORD"] == "secret"
     assert config["CONN_MAX_AGE"] == 0
-    assert config["OPTIONS"] == {"pool": True}
+    assert config["OPTIONS"] == {"pool": {"homogeneous": False}}
 
 
 def test_oracle_dsn_override_and_pool_disable():
@@ -61,7 +62,7 @@ def test_oracle_decodes_base64_password_without_dotenv_interpolation():
     "change,message",
     [
         ({"ORACLE_PASSWORD": "", "ORACLE_PASSWORD_FILE": "/missing/password"}, "Falta la contraseña"),
-        ({"ORACLE_USER": "USRFACDOC]"}, "termina en ']'"),
+        ({"ORACLE_USER": "USRFACDOC]"}, "formato proxy válido"),
         ({"ORACLE_PORT": "abc"}, "ORACLE_PORT"),
     ],
 )
@@ -77,8 +78,9 @@ def test_only_password_file_is_required_for_default_oracle_connection(tmp_path):
         {"DB_ENGINE": "oracle", "ORACLE_PASSWORD_FILE": str(password_file)},
         tmp_path,
     )
-    assert config["NAME"] == "scan-odscbio:1521/ODSCBIO"
-    assert config["USER"] == "USRFACDOC"
+    assert "(HOST=scan-odscbio)(PORT=1521)" in config["NAME"]
+    assert "(SERVICE_NAME=ODSCBIO)" in config["NAME"]
+    assert config["USER"] == "USRFACDOC[USRVALCBIO]"
     assert config["PASSWORD"] == "special# password$"
 
 

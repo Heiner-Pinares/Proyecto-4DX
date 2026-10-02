@@ -77,7 +77,7 @@ El contenedor de la aplicación se ejecuta como usuario sin privilegios. Usa un 
 | `DB_ENGINE` | `oracle` en producción. |
 | `ORACLE_HOST`, `ORACLE_PORT` | Host SCAN y puerto; preparados como `scan-odscbio:1521`. |
 | `ORACLE_SERVICE_NAME` | Servicio Oracle; preparado como `ODSCBIO`. |
-| `ORACLE_USER` | Usuario del esquema; `USRFACDOC` por defecto. |
+| `ORACLE_USER` | Usuario proxy y sesión; `USRFACDOC[USRVALCBIO]` por defecto. |
 | `ORACLE_PASSWORD_FILE` | Archivo privado; por defecto `secrets/oracle_password.txt`. |
 | `ORACLE_PASSWORD` | Alternativa avanzada para inyectar el secreto desde el entorno. |
 | `ORACLE_PASSWORD_B64` | Alternativa Base64 para preservar caracteres especiales; completar solo esta o `ORACLE_PASSWORD`. |

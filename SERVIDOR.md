@@ -4,7 +4,7 @@ El portal usa Django 5.2 y `python-oracledb` en modo Thin, por lo que no necesit
 
 ## Único dato que debes completar
 
-La conexión ya incorpora `scan-odscbio`, puerto `1521`, servicio `ODSCBIO`, usuario `USRFACDOC`, pool y backend Oracle. El usuario recibido como `USRFACDOC]` tenía un corchete accidental y se corrigió a `USRFACDOC`.
+La conexión ya incorpora `scan-odscbio`, puerto `1521`, servicio `ODSCBIO`, descriptor dedicado, usuario proxy `USRFACDOC[USRVALCBIO]`, pool heterogéneo y backend Oracle.
 
 Dentro de la carpeta `secrets`, crea `oracle_password.txt` y pega únicamente la contraseña en su primera línea:
 
@@ -14,13 +14,13 @@ TU_CONTRASEÑA_REAL
 
 No agregues comillas ni `ORACLE_PASSWORD=`. Ese archivo está excluido de Git y de la imagen Docker. La clave interna de Django se crea y conserva automáticamente en el volumen privado `portal_runtime`; tampoco tienes que configurarla.
 
-La aplicación construye automáticamente `scan-odscbio:1521/ODSCBIO`, una cadena Easy Connect con *service name* apropiada para el host SCAN. `.env` queda disponible solo para cambios avanzados futuros, como un dominio HTTPS o un descriptor RAC distinto.
+La aplicación construye automáticamente el descriptor `(DESCRIPTION=... (SERVER=DEDICATED)(SERVICE_NAME=ODSCBIO))` validado en PL/SQL Developer. `.env` queda disponible solo para cambios avanzados futuros.
 
 ## Preparación por el DBA
 
 El esquema de la conexión debe ser propietario de las tablas del portal y tener cuota en su tablespace. Para que Django cree las diez tablas necesita `CREATE SESSION`, `CREATE TABLE`, `CREATE SEQUENCE`, `CREATE PROCEDURE` y `CREATE TRIGGER`. El ejemplo revisable está en `deploy/permisos_oracle.sql.example`; el DBA debe ajustar el tablespace según la infraestructura.
 
-Usar un esquema dedicado. Si `USRFACDOC` contiene tablas de otros sistemas, las migraciones no las eliminan, pero compartir propietario complica respaldos, permisos y recuperación. El DBA debe confirmar el uso del esquema antes del primer `migrate`.
+Las sentencias se ejecutan en la sesión `USRVALCBIO` mediante el proxy `USRFACDOC`. El DBA debe confirmar que `USRVALCBIO` sea el esquema autorizado para las diez tablas del portal antes del primer `migrate`.
 
 ## Instalación con Docker
 

@@ -20,10 +20,18 @@ def database_config(env, base_dir=None):
     backend = aliases.get(engine, engine if "." in engine else f"django.db.backends.{engine}")
 
     if backend == "django.db.backends.oracle":
-        user = (env.get("ORACLE_USER") or "USRFACDOC").strip()
-        if user.endswith("]"):
+        user = (env.get("ORACLE_USER") or "USRFACDOC[USRVALCBIO]").strip()
+        uses_proxy = "[" in user or "]" in user
+        if uses_proxy and not (
+            user.count("[") == 1
+            and user.count("]") == 1
+            and user.index("[") > 0
+            and user.endswith("]")
+            and user.index("[") < len(user) - 2
+        ):
             raise ImproperlyConfigured(
-                "ORACLE_USER termina en ']'. Revisa el usuario; para este portal se espera USRFACDOC."
+                "ORACLE_USER no tiene un formato proxy válido; se espera "
+                "USUARIO_PROXY[USUARIO_SESION]."
             )
         encoded_password = (env.get("ORACLE_PASSWORD_B64") or "").strip()
         if encoded_password:
@@ -60,14 +68,20 @@ def database_config(env, base_dir=None):
             if not port.isdigit() or not 1 <= int(port) <= 65535:
                 raise ImproperlyConfigured("ORACLE_PORT debe ser un puerto válido.")
             service = (env.get("ORACLE_SERVICE_NAME") or "ODSCBIO").strip()
-            # Easy Connect usa explícitamente el service_name del SCAN/RAC.
-            dsn = f"{host}:{port}/{service}"
+            # Replica el descriptor validado en PL/SQL Developer.
+            dsn = (
+                "(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)"
+                f"(HOST={host})(PORT={port}))"
+                "(CONNECT_DATA=(SERVER=DEDICATED)"
+                f"(SERVICE_NAME={service})))"
+            )
         pool = (env.get("ORACLE_POOL") or "true").lower() == "true"
         # python-oracledb es seguro para uso multihilo de forma predeterminada.
         # `threaded` pertenecía a cx_Oracle y create_pool() ya no lo acepta.
         options = {}
         if pool:
-            options["pool"] = True
+            # La autenticación proxy requiere un pool heterogéneo.
+            options["pool"] = {"homogeneous": False} if uses_proxy else True
         return {
             "ENGINE": backend,
             "NAME": dsn,
