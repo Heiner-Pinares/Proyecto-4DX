@@ -7,3 +7,36 @@ body{color:var(--ink);font-size:14px}.ui-icon{width:22px;height:22px;fill:none;s
 
 /* El contenedor indica el foco sin duplicar el borde del input. */
 .login-input input:focus,.login-input input:focus-visible{outline:none;box-shadow:none}
+
+/* Logotipo Claro: reserva espacio superior y dibuja sus dos rayos completos. */
+.claro-logo{display:inline-block;line-height:.9;padding-top:16px}
+.claro-logo span{inset:0;width:100%;height:100%;background:none;transform:none;pointer-events:none}
+.claro-logo span:before,.claro-logo span:after{content:'';position:absolute;display:block;background:#e20b19;border-radius:1px}
+.claro-logo span:before{right:16px;top:0;width:6px;height:19px;transform:none}
+.claro-logo span:after{right:-1px;top:4px;width:24px;height:6px;transform:rotate(-43deg);transform-origin:right center}
+
+/* En portátiles con poca altura, el login entra completo sin desplazamiento. */
+.login-layout{width:100%;margin:0 auto}
+@media (min-width:761px) and (max-height:900px){
+  .login-designed:before{height:24vh}
+  .login-header{padding:18px 5% 10px}
+  .claro-logo{font-size:50px;padding-top:14px}
+  .claro-logo span:before{right:14px;height:17px}
+  .claro-logo span:after{width:22px}
+  .login-layout{gap:6%;padding:4px 7% 72px}
+  .welcome .welcome-label{font-size:15px;padding-bottom:9px}
+  .welcome h1{font-size:44px;margin:16px 0 8px}
+  .welcome>p{font-size:17px;line-height:1.4}
+  .benefits{margin-top:24px}
+  .benefits span{width:48px;height:48px;margin-bottom:8px}
+  .benefits svg{width:25px;height:25px}
+  .login-card{padding:24px 36px}
+  .login-card h2{font-size:28px;margin:3px 0 6px}
+  .login-card>p{font-size:15px;margin-bottom:18px}
+  .login-card label{margin-bottom:5px}
+  .login-input{margin-bottom:15px}
+  .login-input input{padding:11px 0}
+  .login-card .full{padding:12px}
+  .login-card small{margin-top:14px}
+  .login-footer{bottom:18px}
+}
