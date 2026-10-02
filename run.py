@@ -17,6 +17,29 @@ from config.settings import flag
 log = logging.getLogger(__name__)
 
 
+def production_server_command():
+    """Usa un servidor WSGI compatible con el sistema operativo."""
+    if os.name == "nt":
+        return [
+            sys.executable,
+            "-m",
+            "waitress",
+            "--listen=0.0.0.0:8000",
+            "--threads=8",
+            "config.wsgi:application",
+        ]
+    return [
+        sys.executable,
+        "-m",
+        "gunicorn",
+        "config.wsgi:application",
+        "--bind",
+        "0.0.0.0:8000",
+        "--workers",
+        "2",
+    ]
+
+
 def initialize():
     retries = int(os.getenv("DB_CONNECT_RETRIES", "30"))
     delay = float(os.getenv("DB_CONNECT_DELAY", "2"))
@@ -53,16 +76,4 @@ if __name__ == "__main__":
         if flag("DEBUG"):
             call_command("runserver", "0.0.0.0:8000", use_reloader=False)
         else:
-            os.execv(
-                sys.executable,
-                [
-                    sys.executable,
-                    "-m",
-                    "gunicorn",
-                    "config.wsgi:application",
-                    "--bind",
-                    "0.0.0.0:8000",
-                    "--workers",
-                    "2",
-                ],
-            )
+            os.execv(sys.executable, production_server_command())

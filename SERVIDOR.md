@@ -43,7 +43,9 @@ docker compose exec web python manage.py createsuperuser
 
 El healthcheck consulta `/login/`. No escalar `web` durante una migración: aplicar migraciones con una sola instancia y luego aumentar réplicas.
 
-## Instalación sin Docker en Linux
+## Instalación sin Docker
+
+En Linux:
 
 ```bash
 python3.12 -m venv .venv
@@ -56,7 +58,18 @@ python manage.py createsuperuser
 python run.py
 ```
 
-`run.py` realiza automáticamente la verificación y las migraciones. Con `DEBUG=False` ejecuta Gunicorn en `0.0.0.0:8000`. Administrar el proceso mediante systemd, Supervisor o el mecanismo del servidor. Gunicorn no funciona de forma nativa en Windows; allí usar Docker con contenedores Linux o un servidor WSGI compatible.
+En Windows PowerShell:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
+.\.venv\Scripts\python.exe run.py --check
+.\.venv\Scripts\python.exe manage.py createsuperuser
+.\.venv\Scripts\python.exe run.py
+```
+
+`run.py` realiza automáticamente la verificación y las migraciones. Con `DEBUG=False` ejecuta Gunicorn en Linux y Waitress en Windows, ambos en `0.0.0.0:8000`. Administrar el proceso mediante systemd, Supervisor, un servicio de Windows o el mecanismo corporativo del servidor.
 
 ## HTTPS y URL pública
 
