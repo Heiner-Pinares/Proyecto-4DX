@@ -2,16 +2,19 @@ import json
 import base64
 import sys
 import types
+from datetime import date
 
 import pytest
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
+from django.db.backends.oracle.base import DatabaseWrapper
 from django.utils import timezone
 
 from config.database import database_config
 from config.runtime_secrets import secret_key
 from compromisos.models import Compromiso, EventoCompromiso
+from compromisos.selectors import base as compromisos_base
 
 
 def oracle_env(**changes):
@@ -49,6 +52,42 @@ def test_oracle_dsn_override_and_pool_disable():
 def test_oracle_pool_does_not_forward_legacy_threaded_argument():
     config = database_config(oracle_env())
     assert "threaded" not in config["OPTIONS"]
+
+
+def test_oracle_casts_calculated_text_to_nvarchar2():
+    settings_dict = {
+        "ENGINE": "django.db.backends.oracle",
+        "NAME": "unused",
+        "USER": "unused",
+        "PASSWORD": "unused",
+        "HOST": "",
+        "PORT": "",
+        "OPTIONS": {},
+        "TIME_ZONE": None,
+        "CONN_MAX_AGE": 0,
+        "CONN_HEALTH_CHECKS": False,
+        "AUTOCOMMIT": True,
+        "ATOMIC_REQUESTS": False,
+        "TEST": {
+            "MIRROR": None,
+            "NAME": None,
+            "CHARSET": None,
+            "COLLATION": None,
+            "MIGRATE": True,
+        },
+    }
+    connection = DatabaseWrapper(settings_dict, alias="oracle_compile")
+    # Evita abrir una conexión: esta prueba solo compila la consulta Oracle.
+    connection.__dict__["operators"] = connection._standard_operators
+    connection.__dict__["oracle_version"] = (19, 25)
+    query = compromisos_base(date(2026, 10, 2)).filter(
+        situacion__in=["Por vencer", "Vencido"]
+    )
+
+    sql, _ = query.query.get_compiler(connection=connection).as_sql()
+
+    assert "AS NVARCHAR2(2)" in sql
+    assert "AS NVARCHAR2(30)" in sql
 
 
 def test_auxiliary_records_do_not_keep_nullable_origin_unique_constraint():

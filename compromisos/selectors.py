@@ -2,7 +2,7 @@ from datetime import date, timedelta
 
 from django.conf import settings
 from django.db.models import Case, CharField, F, OuterRef, Q, Subquery, Value, When
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
 
 from .models import Compromiso, EventoCompromiso
@@ -34,18 +34,21 @@ def base(hoy=None):
             ),
             F("estatus"),
         ),
-        situacion=Case(
-            When(suspendida=True, then=Value("Suspendido")),
-            When(objetivo__isnull=True, then=Value("Por definir")),
-            When(fecha_real__lte=F("objetivo"), then=Value("Cumplido a tiempo")),
-            When(fecha_real__gt=F("objetivo"), then=Value("Cumplido fuera de plazo")),
-            When(objetivo__lt=hoy, then=Value("Vencido")),
-            When(
-                objetivo__lte=hoy + timedelta(days=settings.DUE_SOON_DAYS),
-                then=Value("Por vencer"),
+        situacion=Cast(
+            Case(
+                When(suspendida=True, then=Value("Suspendido")),
+                When(objetivo__isnull=True, then=Value("Por definir")),
+                When(fecha_real__lte=F("objetivo"), then=Value("Cumplido a tiempo")),
+                When(fecha_real__gt=F("objetivo"), then=Value("Cumplido fuera de plazo")),
+                When(objetivo__lt=hoy, then=Value("Vencido")),
+                When(
+                    objetivo__lte=hoy + timedelta(days=settings.DUE_SOON_DAYS),
+                    then=Value("Por vencer"),
+                ),
+                default=Value("En plazo"),
+                output_field=CharField(max_length=30),
             ),
-            default=Value("En plazo"),
-            output_field=CharField(),
+            CharField(max_length=30),
         ),
     )
 
