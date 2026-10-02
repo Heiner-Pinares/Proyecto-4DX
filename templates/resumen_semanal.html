@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resumen semanal 4DX</title>
+</head>
+<body style="margin:0;padding:0;background:#F4F6F8;color:#172D4A;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;background:#F4F6F8;margin:0;padding:0;">
+    <tr>
+      <td align="center" style="padding:28px 12px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="700" style="width:100%;max-width:700px;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;">
+          <tr>
+            <td style="height:7px;background:#DA291C;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:28px 30px 10px 30px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td valign="middle" width="80" style="width:80px;">
+                    <div style="width:64px;height:64px;line-height:64px;text-align:center;background:#DA291C;color:#FFFFFF;border-radius:50%;font-size:20px;font-weight:700;letter-spacing:.3px;">4DX</div>
+                  </td>
+                  <td valign="middle" style="padding-left:4px;">
+                    <div style="font-size:23px;line-height:1.25;font-weight:700;color:#172D4A;">4DX Facturación</div>
+                    <div style="font-size:16px;line-height:1.5;color:#526276;margin-top:4px;">Tu resumen semanal de 4DX</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:14px 30px 30px 30px;">
+              <div style="font-size:28px;line-height:1.25;font-weight:700;color:#172D4A;margin:0 0 10px 0;">¡Hola equipo!</div>
+              <div style="font-size:17px;line-height:1.6;color:#334E68;margin:0 0 16px 0;">Aquí tienes el resumen del cumplimiento y los compromisos próximos a vencer de cada jefatura.</div>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0;">
+                <tr>
+                  <td style="background:#F1F5F9;border:1px solid #E2E8F0;border-radius:20px;padding:8px 14px;font-size:15px;line-height:1.4;color:#526276;">
+                    Semana del <strong style="color:#172D4A;">{{ corte|date:"d/m/Y" }}</strong> al <strong style="color:#172D4A;">{{ fin|date:"d/m/Y" }}</strong>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 30px 22px 30px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#EAF8FF;border:1px solid #B9E7F7;border-radius:12px;">
+                <tr>
+                  <td valign="middle" width="64" align="center" style="width:64px;padding:18px 4px 18px 18px;">
+                    <div style="width:46px;height:46px;line-height:46px;border-radius:50%;background:#009FDF;color:#FFFFFF;font-size:22px;font-weight:700;text-align:center;">{{ total_proximos }}</div>
+                  </td>
+                  <td valign="middle" style="padding:18px 20px 18px 12px;">
+                    <div style="font-size:20px;line-height:1.35;font-weight:700;color:#005C80;">Compromisos próximos a vencer</div>
+                    <div style="font-size:16px;line-height:1.5;color:#334E68;margin-top:4px;">{{ total_proximos }} compromiso{{ total_proximos|pluralize:"s" }} requiere{{ total_proximos|pluralize:"n" }} atención esta semana.</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          {% for g in grupos %}
+          <tr><td style="padding:0 30px 18px 30px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid {{ g.color }};border-left:6px solid {{ g.color }};border-radius:12px;overflow:hidden;">
+              <tr><td style="padding:16px 18px;background:{{ g.fondo }};">
+                <div style="font-size:19px;line-height:1.35;font-weight:700;color:{{ g.color }};">{{ g.nombre }}</div>
+                <div style="font-size:15px;line-height:1.45;color:{{ g.color }};margin-top:4px;">{{ g.proximos|length }} por vencer</div>
+              </td></tr>
+              <tr><td style="padding:4px 18px 6px 18px;background:#FFFFFF;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="table-layout:fixed;">
+                {% for c in g.proximos %}
+                  <tr><td valign="top" width="22" style="width:22px;padding:15px 0;color:{{ g.color }};font-size:19px;line-height:1;">●</td>
+                  <td style="padding:12px 0 13px 0;{% if not forloop.last %}border-bottom:1px solid {{ g.fondo }};{% endif %}overflow-wrap:anywhere;word-wrap:break-word;">
+                    <div style="font-size:17px;line-height:1.45;font-weight:700;color:#172D4A;">{{ c.tarea }}</div>
+                    <div style="font-size:15px;line-height:1.5;color:#526276;margin-top:4px;">{{ c.objetivo|date:'d/m/Y' }} &nbsp;·&nbsp; Responsable: <strong style="color:#334E68;">{{ c.responsable_pyp|default:'Por asignar' }}</strong></div>
+                  </td></tr>
+                {% empty %}<tr><td style="padding:18px 0;font-size:16px;line-height:1.55;color:#526276;">Sin compromisos próximos a vencer en este período.</td></tr>{% endfor %}
+                </table>
+              </td></tr>
+            </table>
+          </td></tr>
+          {% endfor %}
+
+          <tr>
+            <td style="padding:0 30px 30px 30px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F2F9FC;border:1px solid #D9EBF2;border-radius:14px;">
+                <tr>
+                  <td style="padding:22px 22px 8px 22px;">
+                    <div style="font-size:22px;line-height:1.35;font-weight:700;color:#172D4A;">Estado general de cumplimiento</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:14px 22px 18px 22px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FFFFFF;border:1px solid #CDE7F1;border-radius:12px;">
+                      <tr>
+                        <td align="center" style="padding:22px 16px 8px 16px;font-size:15px;line-height:1.4;color:#526276;">Cumplimiento general</td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding:0 16px;font-size:42px;line-height:1.15;font-weight:700;color:#007AA8;">{% if general != None %}{{ general|floatformat:1 }} %{% else %}—{% endif %}</td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding:8px 16px 22px 16px;font-size:15px;line-height:1.5;color:#526276;">{{ cerrados }} compromiso{{ cerrados|pluralize:"s" }} con fecha real hasta el corte</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 22px 8px 22px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#FFFFFF;border:1px solid #DFEAF0;border-radius:10px;">
+                      {% for g in grupos %}<tr>
+                        <td width="24" valign="middle" style="width:24px;padding:15px 0 15px 16px;color:{{ g.color }};font-size:18px;">●</td>
+                        <td style="padding:14px 10px;font-size:16px;line-height:1.45;color:#334E68;{% if not forloop.last %}border-bottom:1px solid #E6EEF2;{% endif %}">{{ g.nombre }}</td>
+                        <td align="right" style="padding:14px 16px 14px 8px;font-size:19px;line-height:1.3;font-weight:700;color:#172D4A;{% if not forloop.last %}border-bottom:1px solid #E6EEF2;{% endif %}">{% if g.cumplimiento != None %}{{ g.cumplimiento|floatformat:1 }} %{% else %}<span style="font-size:13px;font-weight:400;">Sin cierres al corte</span>{% endif %}</td>
+                      </tr>{% endfor %}
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 22px 22px 22px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr>
+                        <td align="center" bgcolor="#009FDF" style="background:#009FDF;border-radius:9px;">
+                          <a href="{{ tablero_url }}" target="_blank" rel="noopener" style="display:block;padding:15px 18px;color:#FFFFFF;text-decoration:none;font-size:17px;line-height:1.3;font-weight:700;">Ver tablero completo de 4DX ↗</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 30px 28px 30px;">
+              <div style="border-top:1px solid #E2E8F0;padding-top:18px;font-size:13px;line-height:1.55;color:#64748B;">
+                Generado por 4DX · Información actual de la plataforma según los filtros aplicados. Se excluyen suspendidos y eliminados. Cumplimiento: promedio de los puntajes 100/80/60 de cierres al corte; no mide el porcentaje de tareas completadas. No reconstruye versiones históricas. El tablero requiere iniciar sesión.
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

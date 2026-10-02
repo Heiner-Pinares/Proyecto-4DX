@@ -48,3 +48,27 @@ nav a:hover,nav a.active{color:var(--black)}
 .spreadsheet td.col-status, .spreadsheet td.col-puntaje {text-align:center;vertical-align:middle;}
 .spreadsheet td.col-status .cell-display, .spreadsheet td.col-puntaje .cell-display {display:block;text-align:center;color:inherit;}
 .score-legend .score-100 {background:#BBAAB6;color:#000000;}
+
+/* Desplegable compacto de selección múltiple. */
+.date-stage-filter {min-width:0;font-size:11px;font-weight:600;color:var(--muted);}
+.date-stage-dropdown {position:relative;margin-top:6px;}
+.date-stage-dropdown>summary {display:flex;align-items:center;justify-content:space-between;gap:8px;list-style:none;cursor:pointer;background:var(--white);border:1px solid var(--border);border-radius:7px;padding:10px 11px;color:var(--ink);font-size:12px;font-weight:400;min-height:38px;}
+.date-stage-dropdown>summary::-webkit-details-marker {display:none;}
+.date-stage-dropdown>summary::after {content:'▾';flex-shrink:0;}
+.date-stage-dropdown[open]>summary {border-color:var(--cyan);}
+.date-stage-menu {position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:30;padding:12px;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 18px #00000020;}
+.date-stage-options {display:grid;gap:10px;margin-bottom:10px;}
+.date-stage-options label {display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--ink);}
+.date-stage-options input[type="checkbox"] {width:16px;height:16px;margin:0;accent-color:var(--cyan);}
+.date-stage-menu small {display:block;color:var(--muted);font-weight:400;line-height:1.5;}
+
+/* Menú de opciones con marcas de selección, inspirado en el selector de macOS. */
+.date-stage-menu {padding:6px;background:#FAF8F8;border:1px solid #C8C8C8;border-radius:14px;box-shadow:0 6px 18px #00000030;min-width:170px;}
+.date-stage-options {gap:2px;margin:0;}
+.date-stage-options label,.date-stage-options .date-stage-all {position:relative;display:flex;align-items:center;width:100%;min-height:34px;margin:0;padding:7px 12px 7px 29px;border:0;border-radius:9px;background:transparent;color:#262626;text-align:left;font-size:14px;font-weight:400;cursor:pointer;line-height:1.4;}
+.date-stage-options input[type="checkbox"] {position:absolute;opacity:0;width:1px;height:1px;left:10px;}
+.date-stage-options label:has(input:checked),.date-stage-options .date-stage-all[aria-pressed="true"] {background:#5298FF;color:#FFFFFF;}
+.date-stage-options label:has(input:checked)::before,.date-stage-options .date-stage-all[aria-pressed="true"]::before {content:'✓';position:absolute;left:9px;font-weight:600;}
+.date-stage-options label:hover,.date-stage-options .date-stage-all:hover {background:#E1EBFA;color:#262626;}
+.date-stage-options label:has(input:checked):hover,.date-stage-options .date-stage-all[aria-pressed="true"]:hover {background:#4289F0;color:#FFFFFF;}
+.date-stage-options label:has(input:focus-visible),.date-stage-options .date-stage-all:focus-visible {outline:2px solid #1F65CB;outline-offset:-2px;}

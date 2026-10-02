@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
 
-from compromisos.models import Estado
+from compromisos.models import EventoCompromiso
 
 
 class Command(BaseCommand):
@@ -15,8 +15,8 @@ class Command(BaseCommand):
             (settings.CLOSED_STATUS_CODE, "Terminado"),
             ("S", "Suspendido"),
         ]:
-            Estado.objects.update_or_create(codigo=code, defaults={"nombre": label, "activo": True})
-        Estado.objects.exclude(codigo__in=["EC", "S", "T", "D"]).update(activo=False)
+            EventoCompromiso.estados.update_or_create(codigo=code, defaults={"nombre": label, "activo": True})
+        EventoCompromiso.estados.exclude(codigo__in=["EC", "S", "T", "D"]).update(activo=False)
         for name in ["Administrador", "Editor", "Consulta"]:
             group, _ = Group.objects.get_or_create(name=name)
             if name == "Administrador":
@@ -26,8 +26,7 @@ class Command(BaseCommand):
             else:
                 codes = [
                     "view_compromiso",
-                    "view_reprogramacion",
-                    "view_historialcompromiso",
+                    "view_eventocompromiso",
                     "view_estado",
                 ]
                 if name == "Editor":

@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Max
 
-from .models import Compromiso, Estado, Reprogramacion
+from .models import Compromiso, EventoCompromiso
 from .permissions import require
 from .services import audit
 
@@ -19,6 +19,7 @@ COLUMNS = [
     ("status", "Estatus", "readonly"),
     ("meta", "Meta", "number"),
     ("responsable_pyp", "Responsable", "text"),
+    ("jefatura", "Jefatura", "select"),
     ("mes", "Mes", "readonly"),
     ("fecha_de_compromiso", "Fecha de compromiso", "date"),
     ("fecha_de_vencimiento", "Vencimiento", "readonly"),
@@ -71,6 +72,7 @@ def fila(c):
                 "value": raw,
                 "display": display,
                 "editable": name in EDITABLE,
+                "options": ([{"codigo": "", "nombre": "Sin asignar"}] + [{"codigo": code, "nombre": label} for code, label in Compromiso.JEFATURAS]) if name == "jefatura" else None,
             }
         )
     return {"id": c.pk, "version": c.updated_at.isoformat(), "cells": cells}
@@ -101,7 +103,7 @@ def editar_celda(pk, payload, user):
     if (
         name == "status"
         and value != c.status
-        and not Estado.objects.filter(codigo=value, activo=True).exists()
+        and not EventoCompromiso.estados.filter(codigo=value, activo=True).exists()
     ):
         raise ValidationError("Selecciona un estado activo.")
     previous = getattr(c, name)
@@ -138,13 +140,14 @@ def editar_celda(pk, payload, user):
         number = (
             c.reprogramaciones.aggregate(n=Max("numero_reprogramacion"))["n"] or 0
         ) + 1
-        Reprogramacion.objects.create(
+        EventoCompromiso.objects.create(
             compromiso=c,
+            tipo="reprogramacion",
             numero_reprogramacion=number,
             fecha_anterior=previous,
             fecha_nueva=value,
             motivo=f"{name}: {reason}",
-            created_by=user.get_username(),
+            usuario=user.get_username(),
         )
     if c.puntaje != score_before:
         detail += f" Cumplimiento recalculado: {score_before} → {c.puntaje} %."

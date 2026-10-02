@@ -8,7 +8,7 @@ from django.db import transaction
 from django.db.models import Max
 from django.utils import timezone
 
-from .models import Compromiso, HistorialCompromiso, Reprogramacion
+from .models import Compromiso, EventoCompromiso
 from .permissions import require
 
 log = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ def situacion(c, hoy=None):
 
 
 def audit(c, accion, detalle, user):
-    HistorialCompromiso.objects.create(
+    EventoCompromiso.objects.create(
         compromiso=c, accion=accion, descripcion=detalle, usuario=user.get_username()
     )
     log.info("Compromiso %s: %s por %s", c.pk, accion, user.pk)
@@ -114,13 +114,14 @@ def operar(pk, accion, data, user):
         numero = (
             c.reprogramaciones.aggregate(n=Max("numero_reprogramacion"))["n"] or 0
         ) + 1
-        Reprogramacion.objects.create(
+        EventoCompromiso.objects.create(
             compromiso=c,
+            tipo="reprogramacion",
             numero_reprogramacion=numero,
             fecha_anterior=anterior,
             fecha_nueva=nueva,
             motivo=detalle,
-            created_by=user.get_username(),
+            usuario=user.get_username(),
         )
         if slot:
             setattr(c, slot, nueva)

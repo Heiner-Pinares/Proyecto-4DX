@@ -1,0 +1,15 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+<p><a href="{% url 'admin:index' %}">Administración</a> › <a href="{% url 'admin:compromisos_estado_changelist' %}">Estados</a></p>
+{% if action == 'list' %}
+{% if can_add %}<p><a href="{% url 'admin:compromisos_estado_add' %}">Añadir estado</a></p>{% endif %}
+<table><thead><tr><th>Código</th><th>Nombre</th><th>Activo</th></tr></thead><tbody>{% for row in rows %}<tr><td><a href="{% url 'admin:compromisos_estado_change' row.estado_id %}">{{ row.codigo }}</a></td><td>{{ row.nombre }}</td><td>{{ row.activo|yesno:'Sí,No' }}</td></tr>{% endfor %}</tbody></table>
+{% elif action == 'history' %}
+<h2>{{ obj }}</h2><table><thead><tr><th>Fecha</th><th>Usuario</th><th>Cambio</th></tr></thead><tbody>{% for entry in history %}<tr><td>{{ entry.action_time }}</td><td>{{ entry.user }}</td><td>{{ entry.get_change_message }}</td></tr>{% empty %}<tr><td colspan="3">Sin cambios registrados.</td></tr>{% endfor %}</tbody></table>
+{% elif action == 'delete' %}
+<p>¿Eliminar el estado {{ obj }}?</p><form method="post">{% csrf_token %}<button type="submit">Confirmar eliminación</button></form>
+{% else %}
+{% if obj %}<p><a href="{% url 'admin:compromisos_estado_history' obj.estado_id %}">Historial</a>{% if can_delete %} · <a href="{% url 'admin:compromisos_estado_delete' obj.estado_id %}">Eliminar</a>{% endif %}</p>{% endif %}
+{% if readonly %}<p>Código: {{ obj.codigo }}</p><p>Nombre: {{ obj.nombre }}</p><p>Activo: {{ obj.activo|yesno:'Sí,No' }}</p>{% else %}<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Guardar</button></form>{% endif %}
+{% endif %}
+{% endblock %}

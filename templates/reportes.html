@@ -8,6 +8,24 @@
 <a class="button secondary" target="_blank" rel="noopener" href="{% url 'correo_reporte' %}?{{ correo_query }}">Abrir correo HTML ↗</a>
 <a class="button secondary" href="{% url 'correo_reporte' %}?{{ correo_query }}&amp;descargar=1">Descargar HTML</a></div>
 </form>
+{% if can_edit %}
+<form method="post" action="{% url 'teams_enviar' %}?{{ correo_query }}" style="margin:16px 0">{% csrf_token %}
+<input type="hidden" name="token" value="{{ teams_token }}">
+<button class="button secondary" {% if not teams_configurado %}disabled{% endif %}>Enviar recordatorio a Teams · 4DX</button>
+<p class="muted">Se enviará al chat 4DX un resumen de hasta 10 pendientes y un enlace al reporte completo, con el corte {{ today }} y los filtros de la vista previa. Actualiza la vista previa si cambias el corte.</p>
+{% if not teams_configurado %}<p>Conexión pendiente: configura TEAMS_WEBHOOK_URL y la URL pública del portal en el archivo .env y reinicia el portal.</p>{% endif %}
+</form>{% endif %}
 <p class="muted">Incluye pendientes actuales sin suspensión, con fecha de compromiso hasta el corte o sin fecha registrada. El plazo se evalúa con las fechas vigentes; no reconstruye estados históricos. Esta vista no envía correos.</p>
 <iframe title="Vista previa del correo de compromisos" src="{% url 'correo_reporte' %}?{{ correo_query }}" style="width:100%;height:780px;border:1px solid var(--border);border-radius:12px;background:white" loading="lazy"></iframe>
+</section><section class="panel padded" style="margin-top:24px">
+<div class="report-icon">4DX</div><h2>Resumen semanal por jefatura</h2>
+<p>Próximos vencimientos y cumplimiento por jefatura, con los datos y filtros de la plataforma.</p>
+<form method="get" action="{% url 'reportes' %}">
+{% for key, values in request.GET.lists %}{% if key != 'corte' and key != 'descargar' %}{% for value in values %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}{% endif %}{% endfor %}
+<label>Fecha de corte<input type="date" name="corte" value="{{ today }}" required></label>
+<div class="filter-actions"><button class="button">Actualizar resumen</button><a class="button secondary" target="_blank" rel="noopener" href="{% url 'resumen_semanal' %}?{{ correo_query }}">Abrir resumen HTML ↗</a><a class="button secondary" href="{% url 'resumen_semanal' %}?{{ correo_query }}&amp;descargar=1">Descargar HTML</a></div>
+</form>
+{% if can_edit %}<form method="post" action="{% url 'correo_enviar' %}?{{ correo_query }}" style="margin:16px 0">{% csrf_token %}<input type="hidden" name="token" value="{{ correo_token }}"><button class="button">Enviar resumen por correo</button><p class="muted">Para: c27826@claro.com.pe · Copia: c28171@claro.com.pe<br>Envía el HTML del resumen con corte {{ today }} y los filtros aplicados. Actualiza primero la vista previa si cambias el corte.</p></form>{% endif %}
+<p class="muted">Próximos a vencer: 7 días desde el corte, incluido ese día. Cumplimiento: promedio de puntajes de compromisos con fecha real hasta el corte, sin suspendidos. Se usan las fechas actuales; no reconstruye estados históricos.</p>
+<iframe title="Resumen semanal 4DX por jefatura" src="{% url 'resumen_semanal' %}?{{ correo_query }}" style="width:100%;height:950px;border:1px solid var(--border);border-radius:12px;background:white" loading="lazy"></iframe>
 </section>{% endblock %}

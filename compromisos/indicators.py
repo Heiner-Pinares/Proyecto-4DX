@@ -50,7 +50,7 @@ def metricas(qs):
             Q(primera_fecha__isnull=False)
             | Q(segunda_fecha__isnull=False)
             | Q(tercera_fecha__isnull=False)
-            | Q(reprogramaciones__isnull=False)
+            | Q(eventos__tipo="reprogramacion")
         )
         .distinct()
         .count()
@@ -65,6 +65,8 @@ def metricas(qs):
         if result["cerrados_fecha"]
         else 0
     )
+    for name in ["terminados", "vencidos", "proximos", "suspendidos", "proceso"]:
+        result[name + "_porcentaje"] = result[name] * 100 / result["total"] if result["total"] else 0
     return result
 
 

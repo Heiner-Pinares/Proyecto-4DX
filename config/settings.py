@@ -15,13 +15,13 @@ DEBUG = flag("DEBUG")
 SECRET_KEY = os.environ["SECRET_KEY"]
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
+    "config.portal_apps.PortalAdminConfig",
+    "config.portal_apps.PortalAuthConfig",
+    "config.portal_apps.PortalContentTypesConfig",
+    "config.portal_apps.PortalSessionsConfig",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "compromisos",
+    "config.portal_apps.PortalCompromisosConfig",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -104,3 +104,18 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": "INFO"},
 }
+
+# URL secreta del flujo Teams; nunca se publica en el navegador.
+from dotenv import dotenv_values
+_teams_config = dotenv_values(BASE_DIR / ".env")
+TEAMS_WEBHOOK_URL = (_teams_config.get("TEAMS_WEBHOOK_URL") or os.getenv("TEAMS_WEBHOOK_URL", "")).strip()
+PORTAL_PUBLIC_URL = (os.getenv("NGROK_PUBLIC_URL") or _teams_config.get("PORTAL_PUBLIC_URL") or os.getenv("PORTAL_PUBLIC_URL", "")).strip().rstrip("/")
+
+CORREO_SSH_HOST = os.getenv("CORREO_SSH_HOST", "")
+CORREO_SSH_USER = os.getenv("CORREO_SSH_USER", "")
+CORREO_SSH_PASSWORD = os.getenv("CORREO_SSH_PASSWORD", "")
+
+SESSION_ENGINE = "compromisos.session_backend"
+MIGRATION_MODULES = {"admin": "config.admin_migrations", "sessions": "config.sessions_migrations"}
+
+MIGRATION_MODULES.update({"auth": "config.auth_migrations", "contenttypes": "config.contenttypes_migrations"})

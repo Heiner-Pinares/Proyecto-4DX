@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from compromisos.models import Compromiso, HistorialCompromiso
+from compromisos.models import Compromiso, EventoCompromiso
 
 
 class Command(BaseCommand):
@@ -31,7 +31,7 @@ class Command(BaseCommand):
             ),
         )
         if created:
-            HistorialCompromiso.objects.create(
+            EventoCompromiso.objects.create(
                 compromiso=c,
                 accion="CREADO",
                 descripcion="Registro de demostración legacy.",
@@ -67,7 +67,7 @@ class Command(BaseCommand):
                 ),
             )
             if created:
-                HistorialCompromiso.objects.create(
+                EventoCompromiso.objects.create(
                     compromiso=c,
                     accion="CREADO",
                     descripcion="Registro de demostración.",

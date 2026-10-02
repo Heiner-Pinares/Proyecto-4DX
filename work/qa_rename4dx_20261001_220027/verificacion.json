@@ -1,0 +1,27 @@
+{
+  "tables": {
+    "compromisos": "compromisos",
+    "registros_portal": "registros_portal4dx",
+    "auth_user": "usuarios_4dx",
+    "auth_group": "grupos_usuarios_4dx",
+    "auth_permission": "permisos_4dx",
+    "auth_group_permissions": "relacion_grupo_4dx",
+    "auth_user_groups": "grupo_usuarios_4dx",
+    "auth_user_user_permissions": "permisos_usuarios_4dx",
+    "django_content_type": "entidades_4dx",
+    "django_migrations": "registrodb_4dx"
+  },
+  "counts": {
+    "compromisos": 7,
+    "registros_portal": 58,
+    "auth_user": 3,
+    "auth_group": 3,
+    "auth_permission": 58,
+    "auth_group_permissions": 58,
+    "auth_user_groups": 3,
+    "auth_user_user_permissions": 0,
+    "django_content_type": 14,
+    "django_migrations": 31
+  },
+  "verified": true
+}

@@ -90,7 +90,7 @@ def test_save_recalculate_conflict(c, editor, client):
     client.force_login(editor)
     response = post(client, c, "fecha_real", "2026-09-11")
     assert response.status_code == 200
-    assert response.json()["row"]["cells"][11]["display"] == "60 %"
+    assert next(cell for cell in response.json()["row"]["cells"] if cell["name"] == "puntaje")["display"] == "60 %"
     assert post(client, c, "tarea", "Se perdió esta edición").status_code == 409
     c.refresh_from_db()
     assert c.puntaje == 60

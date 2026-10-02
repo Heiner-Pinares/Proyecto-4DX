@@ -170,6 +170,7 @@ def test_close_suspend_notes(c, users):
 
 
 def test_bad_close_atomic(c, users):
+    initial_status = c.status
     with pytest.raises(ValidationError):
         operar(
             c.pk,
@@ -178,7 +179,7 @@ def test_bad_close_atomic(c, users):
             users["Editor"],
         )
     c.refresh_from_db()
-    assert c.status == "EC" and c.fecha_real is None
+    assert c.status == initial_status and c.fecha_real is None
 
 
 @pytest.mark.parametrize(

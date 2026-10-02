@@ -74,7 +74,7 @@ def word(qs, corte):
     doc.add_paragraph(
         "Seguimiento agrupado por tema e iniciativa. La situación del plazo se evalúa a la fecha de corte sobre los datos actuales; este reporte no reconstruye versiones históricas."
     )
-    rows = qs.order_by("tema", "iniciativa", "id").prefetch_related("reprogramaciones")
+    rows = qs.order_by("tema", "iniciativa", "id")
 
     def fmt(d):
         return d.strftime("%d/%m/%Y") if d else "Por definir"
@@ -140,3 +140,34 @@ def correo_contexto(qs, corte):
         row.dias_atraso = (corte - row.objetivo).days if row.objetivo and row.objetivo < corte else 0
     return {"rows": rows, "resumen": resumen, "corte": corte,
             "asunto": f"Seguimiento de compromisos en proceso | Corte {corte:%d/%m/%Y}"}
+
+
+def resumen_jefaturas(qs, corte):
+    from datetime import timedelta
+    from django.db.models import Q
+    from .models import Compromiso
+    from .scoring import calcular_puntaje
+
+    fin = corte + timedelta(days=6)
+    rows = list(qs.filter(suspendida=False).filter(
+        Q(fecha_de_compromiso__lte=corte) | Q(fecha_de_compromiso__isnull=True)
+    ).order_by('objetivo', 'id'))
+    palette = [('#DA291C','#FFF0F1'),('#996000','#FFF8DF'),('#007AA8','#EAF8FF')]
+    groups = {name: {'nombre': name, 'color': palette[i][0], 'fondo': palette[i][1], 'proximos': [], 'scores': []}
+              for i, (name, _) in enumerate(Compromiso.JEFATURAS)}
+    scores = []
+    for row in rows:
+        name = row.jefatura or 'Sin jefatura asignada'
+        group = groups.setdefault(name, {'nombre':name,'color':'#000000','fondo':'#F4F4F4','proximos':[],'scores':[]})
+        if not row.fecha_real and row.objetivo and corte <= row.objetivo <= fin:
+            group['proximos'].append(row)
+        if row.fecha_real and row.fecha_real <= corte:
+            score = calcular_puntaje(row)
+            group['scores'].append(score)
+            scores.append(score)
+    for group in groups.values():
+        group['cumplimiento'] = sum(group['scores']) / len(group['scores']) if group['scores'] else None
+        group['cerrados'] = len(group['scores'])
+    return {'grupos':list(groups.values()), 'corte':corte, 'fin':fin,
+            'general':sum(scores)/len(scores) if scores else None,
+            'cerrados':len(scores), 'total_proximos':sum(len(g['proximos']) for g in groups.values())}

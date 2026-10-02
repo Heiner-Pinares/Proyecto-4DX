@@ -2,7 +2,6 @@
   const table = document.getElementById('commitment-sheet');
   if (!table) return;
   const rows = new Map(JSON.parse(document.getElementById('grid-rows').textContent).map(row => [String(row.id), row]));
-  const states = JSON.parse(document.getElementById('grid-options').textContent);
   const status = document.getElementById('save-status');
   const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
   let active = null;
@@ -54,9 +53,9 @@
     const input = document.createElement(cell.kind === 'textarea' ? 'textarea' : ['select','boolean'].includes(cell.kind) ? 'select' : 'input');
     if (input.tagName === 'INPUT') { input.type = cell.kind === 'number' ? 'number' : cell.kind === 'date' ? 'date' : 'text'; if (cell.kind === 'number') {input.min='0';input.step='0.01';} }
     if (cell.kind === 'select' || cell.kind === 'boolean') {
-      const options = cell.kind === 'boolean' ? [{codigo:'true',nombre:'Sí'},{codigo:'false',nombre:'No'}] : [...states];
+      const options = cell.kind === 'boolean' ? [{codigo:'true',nombre:'Sí'},{codigo:'false',nombre:'No'}] : [...(cell.options || [])];
       if (cell.kind === 'select' && !options.some(s => s.codigo === cell.value)) options.push({codigo:cell.value,nombre:cell.value});
-      for (const item of options) {const option = document.createElement('option');option.value=item.codigo;option.textContent=cell.kind === 'select' ? `${item.codigo} · ${item.nombre}` : item.nombre;input.append(option);}
+      for (const item of options) {const option = document.createElement('option');option.value=item.codigo;option.textContent=item.nombre;input.append(option);}
     }
     input.value = cell.value ?? ''; input.setAttribute('aria-label', cell.label);
     if (['tema','iniciativa','tarea','responsable_pyp','status'].includes(cell.name)) input.required=true;
@@ -75,7 +74,7 @@
       if (event.key==='Escape') {event.preventDefault();cancel();}
       if (event.key==='Enter' && !(input.tagName==='TEXTAREA' && event.shiftKey)) {event.preventDefault();save();}
       if (event.key==='Tab' && (!reason || event.target===reason)) {
-        event.preventDefault();const buttons=[...table.querySelectorAll('.cell-value')];const next=buttons[buttons.indexOf(button)+(event.shiftKey?-1:1)];save(next || null);
+        event.preventDefault();const buttons=[...table.querySelectorAll('.cell-value')].filter(b => b.closest('td').getClientRects().length);const next=buttons[buttons.indexOf(button)+(event.shiftKey?-1:1)];save(next || null);
       }
     });
     input.focus();if(input.type==='text'||input.tagName==='TEXTAREA') input.select();say('Editando · Enter para guardar');
@@ -83,7 +82,7 @@
   table.addEventListener('click',event=>{const button=event.target.closest('.cell-value');if(button) open(button);});
   table.addEventListener('keydown',event=>{
     if(active||!event.target.matches('.cell-value'))return;
-    const buttons=[...table.querySelectorAll('.cell-value')];let next;
+    const buttons=[...table.querySelectorAll('.cell-value')].filter(b => b.closest('td').getClientRects().length);let next;
     if(event.key==='ArrowRight')next=buttons[buttons.indexOf(event.target)+1];
     if(event.key==='ArrowLeft')next=buttons[buttons.indexOf(event.target)-1];
     if(event.key==='ArrowDown'||event.key==='ArrowUp') {const tr=event.target.closest('tr');const other=event.key==='ArrowDown'?tr.nextElementSibling:tr.previousElementSibling;next=other?.querySelector(`[data-field="${event.target.closest('td').dataset.field}"] .cell-value`);}

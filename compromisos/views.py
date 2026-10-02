@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.db.models.functions import TruncMonth
+from django.db.models.functions import TruncMonth, TruncWeek
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -13,7 +13,7 @@ from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from .forms import AccionForm, CompromisoForm
 from .indicators import agrupados, metricas
-from .models import Compromiso, Estado, Reprogramacion
+from .models import Compromiso, EventoCompromiso
 from .permissions import require
 from .reports import excel, word, correo_contexto
 from .selectors import SITUACIONES, base, filtrar
@@ -29,9 +29,11 @@ def filtros(request):
     }
     return {
         "opciones": choices,
-        "estados": Estado.objects.filter(codigo__in=["EC", "S", "T", "D"]),
+        "jefaturas": Compromiso.JEFATURAS,
+        "estados": EventoCompromiso.estados.filter(codigo__in=["EC", "S", "T", "D"]),
         "situaciones": SITUACIONES,
         "f": request.GET,
+        "etapas_fecha": request.GET.getlist("etapa_fecha"),
     }
 
 
@@ -51,12 +53,16 @@ def pagina(request, qs):
 def dashboard(request):
     qs = filtrar(request.GET)
     ctx = {
-        "title": "Resumen de gestión",
+        "title": "Tu avance en un vistazo",
         "k": metricas(qs),
         "proximos": qs.filter(situacion="Por vencer").order_by("objetivo")[:8],
         "vencidos": qs.filter(situacion="Vencido").order_by("objetivo")[:8],
         "today": timezone.localdate(),
     }
+    attention = list(qs.filter(situacion__in=["Por vencer", "Vencido"]).order_by("objetivo")[:10])
+    for item in attention:
+        item.dias = (item.objetivo - ctx["today"]).days
+    ctx["atencion"] = attention
     return render(request, "dashboard.html", ctx)
 
 
@@ -65,7 +71,14 @@ def listado(request):
     from .grid import COLUMNS, fila
 
     qs = filtrar(request.GET)
+    sort = request.GET.get("orden", "-created_at")
+    sortable = {"jefatura", "responsable_pyp", "iniciativa", "tarea", "fecha_de_compromiso", "primera_fecha", "segunda_fecha", "tercera_fecha", "created_at", "puntaje", "estatus"}
+    if sort.lstrip("-") not in sortable:
+        sort = "-created_at"
+    qs = qs.order_by(sort, "id")
     page = pagina(request, qs)
+    rows = [fila(c) for c in page["page_obj"]]
+
     return render(
         request,
         "compromisos/list.html",
@@ -73,10 +86,11 @@ def listado(request):
             "title": "Compromisos",
             **filtros(request),
             **page,
+            "k": metricas(qs),
             "columns": [{"name": n, "label": l, "kind": k} for n, l, k in COLUMNS],
-            "rows": [fila(c) for c in page["page_obj"]],
+            "rows": rows,
             "grid_options": list(
-                Estado.objects.filter(activo=True, codigo__in=["EC", "S", "T", "D"]).values("codigo", "nombre")
+                EventoCompromiso.estados.filter(activo=True, codigo__in=["EC", "S", "T", "D"]).values("codigo", "nombre")
             ),
         },
     )
@@ -85,7 +99,7 @@ def listado(request):
 @login_required
 def detalle(request, pk):
     c = get_object_or_404(
-        base().prefetch_related("reprogramaciones", "historial"), pk=pk
+        base(), pk=pk
     )
 
     def presentar(value):
@@ -232,8 +246,8 @@ def indicadores(request):
     )
     meses = agrupados(qs.annotate(periodo=TruncMonth("fecha_de_compromiso")), "periodo")
     reschedules = list(
-        Reprogramacion.objects.filter(compromiso__in=qs)
-        .annotate(periodo=TruncMonth("created_at"))
+        EventoCompromiso.objects.filter(tipo="reprogramacion", compromiso__in=qs)
+        .annotate(periodo=TruncMonth("fecha"))
         .values("periodo")
         .annotate(total=Count("id"))
         .order_by("periodo")
@@ -285,6 +299,16 @@ def indicadores(request):
             },
         ]
     )
+    jefaturas = agrupados(qs, "jefatura")
+    completed = list(qs.filter(fecha_real__isnull=False, suspendida=False, cumplimiento_fechas=100).annotate(semana=TruncWeek("fecha_real")).values("semana").annotate(total=Count("id")).order_by("semana"))
+    replanned = list(EventoCompromiso.objects.filter(tipo="reprogramacion", compromiso__in=qs).annotate(semana=TruncWeek("fecha")).values("semana").annotate(total=Count("id")).order_by("semana"))
+    overview = [
+        {"title": "Cumplimiento por jefaturas", "type": "vertical", "unit": "%", "labels": [r["nombre"].replace("Jefatura de ", "") for r in jefaturas], "values": [r["cumplimiento"] for r in jefaturas]},
+        {"title": "Estado de los compromisos", "type": "donut", "labels": [dict(Compromiso._meta.get_field("status").choices).get(r["estatus"], r["estatus"]) for r in status], "values": [r["total"] for r in status]},
+    ]
+    for label, data in [("Evolutivo de compromisos culminados a primera fecha", completed), ("Evolutivo de reprogramaciones", replanned)]:
+        overview.append({"title": label, "type": "line", "unit": "", "labels": [r["semana"].strftime("%d/%m/%y") for r in data], "values": [r["total"] for r in data]})
+    charts = overview + charts
     return render(
         request,
         "indicadores.html",
@@ -300,6 +324,8 @@ def indicadores(request):
 
 @login_required
 def reportes(request):
+    from .teams import configurado, token_envio
+    from .correo import token_correo
     try:
         corte = date.fromisoformat(request.GET.get("corte") or timezone.localdate().isoformat())
     except ValueError:
@@ -314,6 +340,9 @@ def reportes(request):
             "title": "Reportes ejecutivos",
             "today": corte.isoformat(),
             "correo_query": params.urlencode(),
+            "teams_configurado": configurado(),
+            "teams_token": token_envio(request.user, params.urlencode()),
+            "correo_token": token_correo(request.user, params.urlencode()),
             **filtros(request),
         },
     )
@@ -387,4 +416,23 @@ def correo_reporte(request):
     response["Cache-Control"] = "private, no-store"
     if request.GET.get("descargar") == "1":
         response["Content-Disposition"] = f'attachment; filename="Correo_Compromisos_{corte:%Y%m%d}.html"'
+    return response
+
+
+@login_required
+@xframe_options_sameorigin
+def resumen_semanal(request):
+    from .reports import resumen_jefaturas
+    from django.conf import settings
+    from django.urls import reverse
+    try:
+        corte = date.fromisoformat(request.GET.get('corte') or timezone.localdate().isoformat())
+    except ValueError:
+        return HttpResponse('Fecha de corte no válida.', status=400)
+    context = resumen_jefaturas(filtrar(request.GET, corte), corte)
+    context['tablero_url'] = (settings.PORTAL_PUBLIC_URL or request.build_absolute_uri('/').rstrip('/')) + reverse('dashboard')
+    response = render(request, 'resumen_semanal.html', context)
+    response['Cache-Control'] = 'private, no-store'
+    if request.GET.get('descargar') == '1':
+        response['Content-Disposition'] = f'attachment; filename="Resumen_4DX_{corte:%Y%m%d}.html"'
     return response

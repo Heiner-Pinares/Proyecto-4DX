@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 
-from .models import Compromiso, Estado
+from .models import Compromiso, EventoCompromiso
 
 
 class CompromisoForm(forms.ModelForm):
@@ -13,6 +13,7 @@ class CompromisoForm(forms.ModelForm):
             "iniciativa",
             "tarea",
             "responsable_pyp",
+            "jefatura",
             "suspendida",
             "meta",
             "fecha_de_compromiso",

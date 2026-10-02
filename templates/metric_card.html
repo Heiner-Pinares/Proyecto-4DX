@@ -1,0 +1,1 @@
+<a class="metric-card {{ color }}" href="{% url 'listado' %}{{ url }}"><span class="metric-icon">{% include 'icon.html' with name=icon %}</span><span class="metric-label">{{ label }}</span><strong>{{ value }}</strong><small>{{ note }}</small><span class="metric-percent">{{ percent|floatformat:1 }} %</span></a>

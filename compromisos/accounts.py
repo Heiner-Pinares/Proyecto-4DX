@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group, User
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Estado
+from .models import EventoCompromiso
 from .permissions import require
 
 
@@ -33,8 +33,11 @@ class UsuarioEditForm(forms.ModelForm):
 
 
 class EstadoForm(forms.ModelForm):
+    codigo = forms.CharField(max_length=30, label="Código")
+    nombre = forms.CharField(max_length=100, label="Nombre")
+
     class Meta:
-        model = Estado
+        model = EventoCompromiso
         fields = ["codigo", "nombre", "activo"]
         labels = {"codigo": "Código", "nombre": "Nombre", "activo": "Activo"}
 
@@ -115,8 +118,8 @@ def password(request, pk):
 @login_required
 def estados(request, pk=None):
     require(request.user, administrative=True)
-    obj = get_object_or_404(Estado, pk=pk) if pk else None
-    form = EstadoForm(request.POST if request.method == "POST" else None, instance=obj)
+    obj = get_object_or_404(EventoCompromiso.estados, estado_id=pk) if pk else None
+    form = EstadoForm(request.POST if request.method == "POST" else None, instance=obj or EventoCompromiso(tipo="estado"))
     if obj:
         form.fields["codigo"].disabled = True
     if request.method == "POST" and form.is_valid():
@@ -129,6 +132,6 @@ def estados(request, pk=None):
         {
             "title": "Administración de estados",
             "form": form,
-            "estados_lista": Estado.objects.all(),
+            "estados_lista": EventoCompromiso.estados.all(),
         },
     )

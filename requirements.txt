@@ -7,3 +7,5 @@ pytest>=8,<10
 pytest-django>=4.9,<5
 whitenoise>=6.8,<7
 gunicorn>=23,<24
+
+paramiko>=5,<6
