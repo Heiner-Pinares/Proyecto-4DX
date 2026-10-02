@@ -10,13 +10,25 @@ def adelante(apps, schema_editor):
     for action in ['view','add','change','delete']:
         P.objects.using(alias).get_or_create(content_type=ct, codename=action+'_estado', defaults={'name':action+' estado'})
     for row in apps.get_model('compromisos','Estado').objects.using(alias).all().iterator():
-        R.objects.using(alias).create(tipo='estado', estado_id=row.pk, codigo=row.codigo, nombre=row.nombre, activo=row.activo)
+        R.objects.using(alias).update_or_create(
+            tipo='estado', estado_id=row.pk,
+            defaults=dict(origen_id=row.pk, codigo=row.codigo, nombre=row.nombre, activo=row.activo),
+        )
     for row in apps.get_model('compromisos','EnvioNotificacion').objects.using(alias).all().iterator():
-        R.objects.using(alias).create(tipo='envio', origen_id=row.pk, canal=row.canal, token=row.token, usuario=row.usuario, corte=row.corte, total=row.total, estado=row.estado, fecha=row.creado)
-    for row in apps.get_model('sessions','Session').objects.using(alias).all().iterator():
-        R.objects.using(alias).create(tipo='sesion', session_key=row.session_key, session_data=row.session_data, expire_date=row.expire_date)
+        R.objects.using(alias).update_or_create(
+            tipo='envio', canal=row.canal, token=row.token,
+            defaults=dict(origen_id=row.pk, usuario=row.usuario, corte=row.corte, total=row.total, estado=row.estado, fecha=row.creado),
+        )
+    for origin, row in enumerate(apps.get_model('sessions','Session').objects.using(alias).all().iterator(), start=1):
+        R.objects.using(alias).update_or_create(
+            tipo='sesion', session_key=row.session_key,
+            defaults=dict(origen_id=origin, session_data=row.session_data, expire_date=row.expire_date),
+        )
     for row in apps.get_model('admin','LogEntry').objects.using(alias).all().iterator():
-        R.objects.using(alias).create(tipo='admin', origen_id=row.pk, user_id=row.user_id, content_type_id=row.content_type_id, object_id=row.object_id, object_repr=row.object_repr, action_flag=row.action_flag, change_message=row.change_message, fecha=row.action_time)
+        R.objects.using(alias).update_or_create(
+            tipo='admin', origen_id=row.pk,
+            defaults=dict(user_id=row.user_id, content_type_id=row.content_type_id, object_id=row.object_id, object_repr=row.object_repr, action_flag=row.action_flag, change_message=row.change_message, fecha=row.action_time),
+        )
     for tipo, app, name in [('estado','compromisos','Estado'),('envio','compromisos','EnvioNotificacion'),('sesion','sessions','Session'),('admin','admin','LogEntry')]:
         if R.objects.using(alias).filter(tipo=tipo).count() != apps.get_model(app,name).objects.using(alias).count():
             raise RuntimeError('No coincide el total migrado: '+tipo)

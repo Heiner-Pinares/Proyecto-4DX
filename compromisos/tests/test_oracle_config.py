@@ -49,6 +49,13 @@ def test_oracle_pool_does_not_forward_legacy_threaded_argument():
     assert "threaded" not in config["OPTIONS"]
 
 
+def test_auxiliary_records_do_not_keep_nullable_origin_unique_constraint():
+    constraint_names = {
+        constraint.name for constraint in EventoCompromiso._meta.constraints
+    }
+    assert "evento_origen_unico" not in constraint_names
+
+
 def test_oracle_decodes_base64_password_without_dotenv_interpolation():
     raw = "p#a ss${HOME}'"
     encoded = base64.b64encode(raw.encode()).decode()

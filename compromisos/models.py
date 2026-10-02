@@ -232,7 +232,6 @@ class EventoCompromiso(models.Model):
         verbose_name_plural = "registros del portal"
         ordering = ["-fecha", "-id"]
         constraints = [
-            models.UniqueConstraint(fields=["tipo", "origen_id"], name="evento_origen_unico"),
             models.UniqueConstraint(fields=["compromiso", "numero_reprogramacion"], name="evento_numero_unico"),
             models.UniqueConstraint(fields=["canal", "token"], name="registro_envio_unico"),
             models.CheckConstraint(condition=(
