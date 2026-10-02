@@ -52,6 +52,8 @@ def metricas(qs):
             | Q(tercera_fecha__isnull=False)
             | Q(eventos__tipo="reprogramacion")
         )
+        .order_by()
+        .values("pk")
         .distinct()
         .count()
     )

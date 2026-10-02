@@ -1,6 +1,6 @@
 # Esquema del portal: 10 tablas físicas
 
-La consolidación mantiene todos los datos en PostgreSQL. No utiliza vistas SQL, vistas materializadas, tablas virtuales, modelos proxy, almacenamiento de sesiones en archivos ni cookies como base de datos.
+La consolidación mantiene todos los datos del portal en diez tablas físicas. Producción usa Oracle; no utiliza vistas SQL, vistas materializadas, tablas virtuales, modelos proxy, almacenamiento de sesiones en archivos ni cookies como base de datos.
 
 | Tabla | Función |
 |---|---|
@@ -15,9 +15,11 @@ La consolidación mantiene todos los datos en PostgreSQL. No utiliza vistas SQL,
 | entidades_4dx | Identificadores de entidades usados por los permisos y la auditoría |
 | registrodb_4dx | Versiones aplicadas del esquema |
 
+Oracle guarda identificadores no entrecomillados en mayúsculas. En PL/SQL Developer se mostrarán como `COMPROMISOS`, `REGISTROS_PORTAL4DX`, etc.; son las mismas tablas y deben consultarse sin comillas para conservar la compatibilidad con Django.
+
 `registros_portal4dx.tipo` separa `historial`, `reprogramacion`, `estado`, `envio`, `sesion` y `admin`. Los campos de cada tipo tienen restricciones de integridad e índices. Hay columnas que quedan vacías para los otros tipos: es el compromiso de diseño para limitar el esquema a 10 tablas conservando las funciones. El modelo Python mantiene su nombre `EventoCompromiso` para conservar permisos, relaciones e IDs del historial existente.
 
-Los gestores `estados`, `envios`, `sesiones` y `auditoria` son consultas ORM filtradas sobre la misma tabla física. No crean ninguna relación virtual en PostgreSQL.
+Los gestores `estados`, `envios`, `sesiones` y `auditoria` son consultas ORM filtradas sobre la misma tabla física. No crean ninguna relación virtual en Oracle.
 
 ## Funcionalidades conservadas
 
@@ -32,7 +34,7 @@ Los gestores `estados`, `envios`, `sesiones` y `auditoria` son consultas ORM fil
 
 ## Migraciones
 
-`0010_registros_portal` prepara las columnas y renombra la tabla de eventos. `0011_consolidar_almacenamiento` copia los datos y retira las tablas de estados/envíos. Las migraciones locales `admin.0004` y `sessions.0002` retiran las tablas anteriores de auditoría y sesiones después de copiarlas. Separar estructura y datos evita conflictos con índices y restricciones diferidas de PostgreSQL.
+`0010_registros_portal` prepara las columnas y renombra la tabla de eventos. `0011_consolidar_almacenamiento` copia los datos y retira las tablas de estados/envíos. Las migraciones locales `admin.0004` y `sessions.0002` retiran las tablas anteriores de auditoría y sesiones después de copiarlas. La secuencia está versionada y se aplica con el backend Oracle de Django.
 
 Django usa `config.portal_apps` y las migraciones versionadas de `config/admin_migrations` y `config/sessions_migrations`: la interfaz administrativa y el middleware siguen activos, pero los modelos de almacenamiento antiguos no se registran. No importar `django.contrib.admin.models.LogEntry` ni `django.contrib.sessions.models.Session` en nuevas funciones; utilizar `EventoCompromiso.auditoria` y el backend configurado. Al actualizar Django, revisar estos puntos de integración y ejecutar las pruebas; la versión soportada es 5.2.x.
 

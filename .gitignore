@@ -12,6 +12,10 @@ env/
 .env
 .env.*
 !.env.example
+!deploy/*.example
+secrets/*
+!secrets/LEEME.txt
+runtime-config/
 
 # macOS
 .DS_Store
@@ -22,3 +26,9 @@ env/
 
 # Logs
 *.log
+# Artefactos privados/locales de desarrollo
+work/
+.runtime/
+staticfiles/
+.pytest_cache/
+.ruff_cache/

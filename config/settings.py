@@ -3,6 +3,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from .database import database_config
+from .runtime_secrets import secret_key
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
@@ -12,8 +15,8 @@ def flag(name, default="false"):
 
 
 DEBUG = flag("DEBUG")
-SECRET_KEY = os.environ["SECRET_KEY"]
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+SECRET_KEY = secret_key(os.environ, BASE_DIR)
+ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "*").split(",") if host.strip()]
 INSTALLED_APPS = [
     "config.portal_apps.PortalAdminConfig",
     "config.portal_apps.PortalAuthConfig",
@@ -50,25 +53,7 @@ TEMPLATES = [
     }
 ]
 WSGI_APPLICATION = "config.wsgi.application"
-engine = os.getenv("DB_ENGINE", "postgresql")
-DATABASES = {
-    "default": {
-        "ENGINE": engine if "." in engine else "django.db.backends." + engine,
-        "NAME": os.getenv("DB_NAME", "compromisos_db"),
-    }
-}
-if engine != "sqlite3":
-    DATABASES["default"].update(
-        {
-            key: os.getenv("DB_" + key, default)
-            for key, default in [
-                ("USER", "postgres"),
-                ("PASSWORD", ""),
-                ("HOST", "localhost"),
-                ("PORT", "5432"),
-            ]
-        }
-    )
+DATABASES = {"default": database_config(os.environ, BASE_DIR)}
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation." + name}
     for name in [
@@ -109,7 +94,7 @@ LOGGING = {
 from dotenv import dotenv_values
 _teams_config = dotenv_values(BASE_DIR / ".env")
 TEAMS_WEBHOOK_URL = (_teams_config.get("TEAMS_WEBHOOK_URL") or os.getenv("TEAMS_WEBHOOK_URL", "")).strip()
-PORTAL_PUBLIC_URL = (os.getenv("NGROK_PUBLIC_URL") or _teams_config.get("PORTAL_PUBLIC_URL") or os.getenv("PORTAL_PUBLIC_URL", "")).strip().rstrip("/")
+PORTAL_PUBLIC_URL = (os.getenv("PORTAL_PUBLIC_URL") or _teams_config.get("PORTAL_PUBLIC_URL", "")).strip().rstrip("/")
 
 CORREO_SSH_HOST = os.getenv("CORREO_SSH_HOST", "")
 CORREO_SSH_USER = os.getenv("CORREO_SSH_USER", "")
@@ -119,3 +104,13 @@ SESSION_ENGINE = "compromisos.session_backend"
 MIGRATION_MODULES = {"admin": "config.admin_migrations", "sessions": "config.sessions_migrations"}
 
 MIGRATION_MODULES.update({"auth": "config.auth_migrations", "contenttypes": "config.contenttypes_migrations"})
+
+# Servidor directo o proxy inverso HTTPS.
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
+SECURE_SSL_REDIRECT = flag("SECURE_SSL_REDIRECT")
+SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = flag("SECURE_HSTS_INCLUDE_SUBDOMAINS")
+SECURE_HSTS_PRELOAD = flag("SECURE_HSTS_PRELOAD")
+# Activar únicamente cuando el proxy elimina y establece esta cabecera.
+if flag("TRUST_PROXY_HTTPS"):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

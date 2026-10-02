@@ -1,18 +1,16 @@
 # Portal de Gestión de Compromisos · 4DX
 
-Aplicación ejecutable en Python 3.12 y Django 5.2 para centralizar compromisos, reprogramaciones, auditoría, indicadores y reportes. Interfaz corporativa en español con Django Templates, CSS y JavaScript vanilla. PostgreSQL es el motor predeterminado; todo acceso a datos de negocio utiliza el ORM.
+Aplicación ejecutable en Python 3.12 y Django 5.2 para centralizar compromisos, reprogramaciones, auditoría, indicadores y reportes. Interfaz corporativa en español con Django Templates, CSS y JavaScript vanilla. Oracle 19c o posterior es el motor de producción; todo acceso a datos de negocio utiliza el ORM.
 
 ## Estado de la entrega local
 
 El proyecto está en `/Users/heinerpinares/Documents/4DX`. Se creó un entorno `.venv` con Python 3.12 y una instalación local `.runtime` para no depender del Python 3.9 del sistema ni de archivos temporales. Ambos se excluyen del código distribuible.
 
-La configuración `.env` de esta máquina utiliza **PostgreSQL 18** en `localhost:5432`, base `compromisos_db`. Se migraron desde SQLite 1 usuario, 3 grupos, 4 estados, 7 compromisos y 7 entradas de historial, conservando el hash de contraseña del usuario existente. La contraseña de conexión está únicamente en `.env`, excluido del control de versiones y con permisos de acceso restringidos.
+La configuración `.env` de esta Mac conserva **PostgreSQL 18** únicamente como origen local de los datos actuales. Producción y Docker están configurados para Oracle mediante `python-oracledb`; la contraseña Oracle se lee de `secrets/oracle_password.txt`, excluido del control de versiones y de la imagen.
 
 SQLite ya no es la base activa. Se conserva como respaldo en `work/local.sqlite3`, junto a una copia consistente y el archivo de transferencia en el directorio indicado por `work/ultima_migracion.txt`. Estos respaldos contienen información privada y no deben publicarse.
 
-Se verificaron migraciones sobre PostgreSQL vacío, segundo arranque idempotente, coincidencia de los registros trasladados y las 79 pruebas automatizadas sobre PostgreSQL (79 aprobadas). También se comprobaron dashboard, compromisos, indicadores y exportaciones con el usuario trasladado. Docker sigue sin estar instalado; su configuración con PostgreSQL 16 está preparada pero no se ha ejecutado en este equipo.
-
-Para consultar en pgAdmin: servidor `localhost`, puerto `5432`, usuario `postgres`, base `compromisos_db`. Dentro de la base abre **Schemas → public → Tables**. Los compromisos están en `compromisos` y los usuarios en `auth_user`.
+La batería portable se ejecuta con SQLite en memoria y la configuración local continúa permitiendo verificar el origen PostgreSQL. La conexión, los permisos, las migraciones y la operación sobre Oracle deben validarse dentro de la red corporativa con `python manage.py verificar_oracle`; no se dispone de la contraseña ni de acceso a ODSCBIO desde este equipo.
 
 ## Probar inmediatamente en este equipo
 
@@ -29,21 +27,19 @@ Abre http://localhost:8000 e ingresa con tu usuario existente (`prueba`) y la co
 
 Desde **Usuarios**, el administrador puede crear cuentas, asignar roles, editar datos, desactivar accesos y cambiar contraseñas. No necesita usar Django Admin como interfaz cotidiana.
 
-## Instalación con PostgreSQL sin Docker
+## Instalación con Oracle sin Docker
 
-1. Instala Python 3.12 o posterior y PostgreSQL soportado (la configuración Docker fija PostgreSQL 16).
-2. Crea una base PostgreSQL vacía y un usuario propietario mediante pgAdmin o las herramientas del servidor. La aplicación crea las **tablas dentro de una base existente**; no crea el servicio PostgreSQL, sus roles ni la base contenedora.
-3. En la carpeta del proyecto:
+1. Instala Python 3.12. Oracle Instant Client no es necesario porque `python-oracledb` usa modo Thin.
+2. El DBA debe preparar un esquema Oracle 19c o posterior con cuota y permisos de creación. La aplicación crea las **tablas dentro de ese esquema existente**; no crea la instancia, el servicio ni el usuario Oracle.
+3. En la carpeta del proyecto instala dependencias y crea `secrets/oracle_password.txt` con la contraseña como única línea:
 
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.lock.txt
-cp .env.example .env
-python -c 'import secrets; print(secrets.token_urlsafe(48))'
 ```
 
-Copia la clave generada a `SECRET_KEY` en `.env` y configura `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST` y `DB_PORT`. No sobrescribas un `.env` con información que quieras conservar; en ese caso edítalo. Para desarrollo local puedes establecer `DEBUG=True`.
+Host, puerto, servicio y usuario ya están incorporados. La clave interna de Django se genera y persiste automáticamente. `.env` solo se necesita si luego deseas reemplazar valores avanzados como dominio, HTTPS o DSN.
 
 ```bash
 python run.py --check
@@ -55,13 +51,13 @@ python run.py
 
 ## Ejecución con Docker
 
-Configura `.env` a partir de `.env.example`. Define una `SECRET_KEY` aleatoria y una contraseña PostgreSQL propia antes de ejecutar:
+Después de crear `secrets/oracle_password.txt`, ejecuta:
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
-Abre http://localhost:8000. Compose crea la base contenedora mediante la imagen oficial `postgres:16`; su healthcheck debe pasar antes de iniciar `web`. El arranque de `web` crea las tablas automáticamente. El puerto de PostgreSQL no se expone al host; los datos persisten en `postgres_data`.
+Abre `http://IP_DEL_SERVIDOR:8000`. Compose se conecta al servicio Oracle externo. El arranque comprueba Oracle, crea o actualiza las tablas y verifica el esquema automáticamente.
 
 Crea el primer administrador en otra terminal:
 
@@ -76,12 +72,17 @@ El contenedor de la aplicación se ejecuta como usuario sin privilegios. Usa un 
 | Variable | Función |
 | --- | --- |
 | `DEBUG` | `False` en producción; `True` activa servidor de desarrollo y errores detallados. |
-| `SECRET_KEY` | Clave secreta única, larga y aleatoria. Obligatoria. |
-| `ALLOWED_HOSTS` | Hosts permitidos, separados por comas. Predeterminado: `localhost,127.0.0.1`. |
-| `DB_ENGINE` | `postgresql` por defecto; acepta backend completo de Django. |
-| `DB_NAME` | Base existente; en SQLite, ruta del archivo. |
-| `DB_USER`, `DB_PASSWORD` | Credenciales del motor. |
-| `DB_HOST`, `DB_PORT` | Dirección y puerto; Docker fija `db:5432`. |
+| `SECRET_KEY` | Opcional; si falta se genera y conserva automáticamente. |
+| `ALLOWED_HOSTS` | Hosts permitidos, separados por comas. El arranque directo acepta cualquier host salvo que se restrinja aquí. |
+| `DB_ENGINE` | `oracle` en producción. |
+| `ORACLE_HOST`, `ORACLE_PORT` | Host SCAN y puerto; preparados como `scan-odscbio:1521`. |
+| `ORACLE_SERVICE_NAME` | Servicio Oracle; preparado como `ODSCBIO`. |
+| `ORACLE_USER` | Usuario del esquema; `USRFACDOC` por defecto. |
+| `ORACLE_PASSWORD_FILE` | Archivo privado; por defecto `secrets/oracle_password.txt`. |
+| `ORACLE_PASSWORD` | Alternativa avanzada para inyectar el secreto desde el entorno. |
+| `ORACLE_PASSWORD_B64` | Alternativa Base64 para preservar caracteres especiales; completar solo esta o `ORACLE_PASSWORD`. |
+| `ORACLE_DSN` | Descriptor completo opcional; reemplaza host/puerto/servicio cuando tiene valor. |
+| `ORACLE_POOL` | `true` activa el pool nativo de Django 5.2/python-oracledb. |
 | `AUTO_MIGRATE` | `true` aplica migraciones. Con `false`, el esquema debe estar preparado antes del arranque. |
 | `CLOSED_STATUS_CODE` | Código de terminado; `T` por defecto. |
 | `PENDING_STATUS_CODE` | Código pendiente; `P` por defecto. |
@@ -111,7 +112,7 @@ Si 1ERA FECHA está vacía, se usa el vencimiento original. Si no hay ninguna fe
 
 La tarjeta principal y los gráficos por responsable, tema, iniciativa y mes promedian este puntaje sobre los registros con fecha real, excluyendo suspendidos. Excel y Word incluyen el mismo puntaje. El indicador separado **cumplimiento de meta** conserva la fórmula puntaje/meta; no debe confundirse con el cumplimiento por fechas 100/80/60.
 
-La migración `0002_cumplimiento_fechas` recalcula los datos existentes y deja auditoría de los puntajes que cambian. Antes de aplicarla se creó un respaldo PostgreSQL en `work/antes_edicion_tabla_*.dump`. No se reemplazan las fechas existentes.
+La migración `0002_cumplimiento_fechas` recalcula los datos existentes y deja auditoría de los puntajes que cambian. No se reemplazan las fechas existentes.
 
 La acción Reprogramar conserva el vencimiento original como primera fecha cuando esa casilla está vacía; luego completa la segunda y la tercera. El número del evento de historial es independiente de la posición de la fecha. Los eventos posteriores a la tercera se conservan en el historial.
 
@@ -132,7 +133,7 @@ La eliminación normal asigna `deleted_at`, preserva historial y oculta el compr
 - `status` y situación del plazo son conceptos independientes. Suspender cambia `suspendida` y conserva el estado anterior. Cerrar fija el código configurado y guarda fecha real, puntaje y nota en auditoría.
 - **Fecha vigente**: tercera fecha, segunda, primera, vencimiento original, en ese orden. Se respeta literalmente la regla solicitada: las reprogramaciones posteriores a la tercera fecha quedan en `Reprogramacion` pero no reemplazan la fecha objetivo legacy. La pantalla lo informa. Esta política puede cambiarse después en el servicio y su expresión ORM, junto con sus pruebas de equivalencia.
 - Para registros legacy con fechas previas sin filas de historial, el siguiente número parte de la última posición ocupada. No se sobrescribe una fecha anterior ni se inventa su motivo.
-- Reprogramar bloquea la fila dentro de una transacción y mantiene un número único por compromiso. El historial y la actualización de fechas se confirman juntos o se revierten juntos. La concurrencia real debe probarse sobre el motor de producción; SQLite no ofrece el bloqueo de filas de PostgreSQL.
+- Reprogramar bloquea la fila dentro de una transacción y mantiene un número único por compromiso. El historial y la actualización de fechas se confirman juntos o se revierten juntos. La concurrencia real debe probarse sobre Oracle; SQLite no reproduce su bloqueo de filas.
 - Suspendido prevalece en la situación calculada. Sin fecha objetivo se muestra `Por definir`, incluso si existe fecha real, porque no hay plazo contra el cual comparar.
 - El vencimiento de hoy se considera `Por vencer`. El intervalo es de 0 a `DUE_SOON_DAYS` inclusive.
 - La situación se calcula sobre fechas sin sobrescribir automáticamente el estado de negocio.
@@ -177,7 +178,7 @@ python run.py --check
 
 `pytest.ini` utiliza SQLite en memoria con `config.test_settings`; la contraseña rápida de pruebas solo vive en esa configuración. Se cubren creación/edición, auditoría, borrado y restauración, purga con confirmación, reprogramaciones 1–5 y legacy, rollback, situaciones y equivalencia con ORM, 105,26 %, filtros, permisos, CSRF, páginas, formularios, paginación y exportaciones.
 
-Para ejecutar las mismas pruebas contra PostgreSQL configurado (el usuario de prueba necesita permiso para crear una base de test):
+Para ejecutar las pruebas contra Oracle se necesita un esquema de pruebas separado y los privilegios adicionales documentados por Django; nunca apuntarlas al esquema productivo:
 
 ```bash
 python -m pytest --ds=config.settings -q
@@ -185,14 +186,14 @@ python -m pytest --ds=config.settings -q
 docker compose exec web python -m pytest --ds=config.settings -q
 ```
 
-Antes de aceptar un despliegue, verificar en PostgreSQL una base vacía, dos arranques consecutivos, login, operaciones, exportaciones y pruebas. Las migraciones y la transferencia ya se verificaron sobre PostgreSQL 18 local. La ejecución mediante Docker con PostgreSQL 16 sigue pendiente.
+Antes de aceptar el despliegue, verificar en Oracle un esquema vacío, dos arranques consecutivos, login, operaciones, exportaciones y conteos trasladados. Consulta `SERVIDOR.md` para el procedimiento exacto.
 
 ## Arquitectura y archivos
 
 ```text
 4DX/
 ├── manage.py, run.py
-├── requirements.txt, requirements.lock.txt, pytest.ini
+├── requirements.txt, requirements.lock.txt, requirements-postgresql-transfer.txt, pytest.ini
 ├── .env.example, .gitignore, .dockerignore
 ├── Dockerfile, docker-compose.yml
 ├── README.md
@@ -234,9 +235,9 @@ python -m pytest -q
 
 Versiona las migraciones junto al código. Nunca ejecutes `makemigrations` automáticamente en producción. Con `AUTO_MIGRATE=false`, el operador debe aplicar las migraciones de la versión como paso de despliegue; la aplicación no omite la necesidad de un esquema válido.
 
-Para cambiar motor, instala el driver/backend, ajusta `DB_ENGINE` y conexión en `.env`, revisa sus opciones particulares en `config/settings.py`, aplica migraciones sobre una base nueva, traslada datos con un proceso validado y ejecuta toda la batería sobre ese motor. MySQL y Oracle tienen backends de Django; SQL Server requiere uno de terceros compatible. No basta con copiar el archivo físico de la base. Revisa límites de índices, collation, Unicode, precisión decimal, zona horaria y semántica de bloqueos del nuevo motor.
+La configuración de producción usa el backend Oracle incluido en Django y `python-oracledb`. No basta con copiar archivos físicos de PostgreSQL: el traslado se hace mediante `exportar_portal` y `loaddata`, con validación de conteos y funciones en el destino.
 
-El dominio no contiene SQL manual, campos exclusivos de PostgreSQL, triggers, arrays ni enums de ese motor. La portabilidad de diseño no sustituye una prueba de aceptación sobre cada backend destino.
+El dominio no contiene campos exclusivos de PostgreSQL, arrays ni enums de ese motor. La consulta de reprogramados evita `DISTINCT` sobre `NCLOB`, y el único DDL manual usa el cotizador del backend. Esta preparación no sustituye una prueba de aceptación contra ODSCBIO.
 
 ## Operación y evolución
 
@@ -248,7 +249,7 @@ SSO/Active Directory puede integrarse mediante un backend de autenticación Djan
 
 Se conservan la distribución, los controles y los flujos del portal. La paleta se define en `static/css/portal.css`: rojo `#DA291C`, rosa `#FF67B9`, cyan `#009FDF`, amarillo `#FFCB00`, naranja `#FF7500`, negro `#000000` y blanco `#FFFFFF`. Fondos suaves y separadores son mezclas de estos colores con blanco; los gráficos utilizan las mismas variables. Los botones principales son rojos con texto blanco; las superficies cyan, rosa, amarilla y naranja usan texto negro.
 
-Después de actualizar estáticos durante una publicación ngrok, reinicia el proceso `run_ngrok.py` con la misma URL y recarga el navegador. El túnel de ngrok puede permanecer abierto.
+Después de actualizar estáticos, ejecuta `python manage.py collectstatic --noinput`, reinicia el servicio del portal y recarga el navegador. Consulta SERVIDOR.md para la configuración de despliegue.
 
 
 ### Vista HTML del correo de seguimiento

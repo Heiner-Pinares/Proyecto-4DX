@@ -13,4 +13,4 @@ SSH confía en la identidad presentada en la primera conexión al servidor confi
 
 Solo administradores y editores pueden enviar. POST con protección CSRF, solicitud firmada ligada a usuario/corte/filtros y registro persistente para impedir repetir la misma solicitud. No hay reintentos automáticos: ante una respuesta incierta revisar recepción y cola antes de repetir. El estado aceptado significa salida 0 de sendmail, no entrega confirmada al buzón.
 
-El enlace al tablero usa PORTAL_PUBLIC_URL o la URL de ngrok del proceso y exige autenticación. Reiniciar el portal después de instalar la actualización.
+El enlace al tablero usa PORTAL_PUBLIC_URL y exige autenticación. Reiniciar el portal después de instalar la actualización.

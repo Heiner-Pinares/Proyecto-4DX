@@ -1,0 +1,15 @@
+-- Ejecutar como DBA y ajustar el tablespace antes del pase.
+-- El usuario de aplicación esperado es USRFACDOC (sin corchete final).
+
+GRANT CREATE SESSION TO USRFACDOC;
+GRANT CREATE TABLE TO USRFACDOC;
+GRANT CREATE SEQUENCE TO USRFACDOC;
+GRANT CREATE PROCEDURE TO USRFACDOC;
+GRANT CREATE TRIGGER TO USRFACDOC;
+
+-- Sustituir TABLESPACE_4DX por el tablespace autorizado para el esquema.
+-- ALTER USER USRFACDOC QUOTA UNLIMITED ON TABLESPACE_4DX;
+
+-- Normalmente están concedidos a PUBLIC; ejecutar solo si la política los retiró.
+-- GRANT EXECUTE ON SYS.DBMS_LOB TO USRFACDOC;
+-- GRANT EXECUTE ON SYS.DBMS_RANDOM TO USRFACDOC;

@@ -184,7 +184,7 @@ class TipoManager(models.Manager):
 
 
 class EventoCompromiso(models.Model):
-    """Registros tipificados del portal, almacenados exclusivamente en PostgreSQL."""
+    """Registros tipificados del portal, almacenados en una sola tabla física."""
     TIPOS = [(v, label) for v, label in [
         ("historial", "Historial"), ("reprogramacion", "Reprogramación"),
         ("estado", "Estado configurable"), ("envio", "Envío"),

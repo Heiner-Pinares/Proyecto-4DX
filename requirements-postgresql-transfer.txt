@@ -1,0 +1,2 @@
+# Solo para ejecutar exportar_portal en la instalación PostgreSQL de origen.
+psycopg[binary]==3.3.5

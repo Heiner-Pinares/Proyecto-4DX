@@ -7,7 +7,7 @@ import pytest
 from django.contrib.auth.models import User
 from django.test import Client
 from compromisos.models import Compromiso, EventoCompromiso
-from compromisos.teams import token_envio, tarjeta, validar_config
+from compromisos.teams import token_envio
 
 pytestmark = pytest.mark.django_db
 
@@ -33,6 +33,22 @@ def test_send_once_and_filter_binding(client, setup):
         payload=send.call_args.args[0]
         assert payload['attachments'][0]['content']['actions'][0]['url'].endswith(query)
     assert EventoCompromiso.envios.get(canal="teams").estado == 'aceptado'
+
+
+def test_send_derives_public_url_from_secure_request(client, setup, settings):
+    user, query = setup
+    settings.PORTAL_PUBLIC_URL = ''
+    settings.ALLOWED_HOSTS = ['portal.example.com']
+    with patch('compromisos.teams.enviar') as send:
+        response = client.post(
+            '/reportes/teams/?' + query,
+            {'token': token_envio(user, query)},
+            secure=True,
+            HTTP_HOST='portal.example.com',
+        )
+    assert response.status_code == 302
+    url = send.call_args.args[0]['attachments'][0]['content']['actions'][0]['url']
+    assert url.startswith('https://portal.example.com/')
 
 
 def test_permissions_csrf_and_no_get(client, setup):

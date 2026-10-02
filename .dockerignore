@@ -1,5 +1,7 @@
 .venv
 .env
+secrets/oracle_password.txt
+runtime-config
 .git
 __pycache__
 *.sqlite3

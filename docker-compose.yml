@@ -1,29 +1,27 @@
 services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_DB: ${DB_NAME:-compromisos_db}
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?Configura DB_PASSWORD en .env}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
   web:
     build: .
+    init: true
     ports:
-      - "8000:8000"
-    env_file: .env
+      - "${WEB_BIND_ADDRESS:-0.0.0.0}:8000:8000"
+    env_file:
+      - path: .env
+        required: false
     environment:
-      DB_ENGINE: postgresql
-      DB_HOST: db
-      DB_PORT: 5432
-    depends_on:
-      db:
-        condition: service_healthy
+      ORACLE_PASSWORD_FILE: /app/secrets/oracle_password.txt
+      SECRET_KEY_FILE: /app/runtime-config/django_secret_key.txt
+    volumes:
+      - type: bind
+        source: ./secrets
+        target: /app/secrets
+        read_only: true
+      - portal_runtime:/app/runtime-config
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/login/', timeout=5)"]
+      interval: 30s
+      timeout: 8s
+      retries: 5
+      start_period: 90s
 volumes:
-  postgres_data:
+  portal_runtime:

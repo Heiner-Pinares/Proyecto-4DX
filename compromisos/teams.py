@@ -26,16 +26,16 @@ SALT = '4dx-teams-send'
 
 
 def configurado():
-    return bool(settings.TEAMS_WEBHOOK_URL and settings.PORTAL_PUBLIC_URL)
+    return bool(settings.TEAMS_WEBHOOK_URL)
 
 
 def token_envio(user, query):
     return signing.dumps({'user': user.pk, 'query': query, 'id': str(uuid.uuid4())}, salt=SALT)
 
 
-def validar_config():
+def validar_config(public_url):
     hook = urlsplit(settings.TEAMS_WEBHOOK_URL)
-    public = urlsplit(settings.PORTAL_PUBLIC_URL)
+    public = urlsplit(public_url)
     if (hook.scheme != 'https' or not hook.hostname or hook.username or hook.password
             or hook.port not in (None, 443) or hook.fragment
             or not any(hook.hostname.endswith(suffix) for suffix in ('.logic.azure.com', '.api.powerplatform.com', '.environment.api.powerplatform.com'))):
@@ -43,10 +43,10 @@ def validar_config():
     if (public.scheme != 'https' or not public.hostname or public.username or public.password
             or public.query or public.fragment or public.path not in ('', '/')
             or public.hostname in ('localhost', '127.0.0.1')):
-        raise ValueError('Configura PORTAL_PUBLIC_URL con la dirección HTTPS pública del portal.')
+        raise ValueError('Abre el portal mediante su dirección HTTPS pública antes de enviar a Teams.')
 
 
-def tarjeta(contexto, query):
+def tarjeta(contexto, query, public_url):
     summary = contexto['resumen']
     def block(text, **extra):
         return {'type': 'TextBlock', 'text': text, 'wrap': True, **extra}
@@ -59,7 +59,7 @@ def tarjeta(contexto, query):
         objetivo = row.objetivo.strftime('%d/%m/%Y') if row.objetivo else 'Por definir'
         body.append(block(f"#{row.pk} · {row.tema[:80]} / {row.iniciativa[:80]}\n{row.tarea[:350]}\nResponsable: {row.responsable_pyp[:100]} · Objetivo: {objetivo} · {row.situacion}", separator=True))
     body.append(block(f"Se muestran {min(summary['total'], 10)} de {summary['total']} pendientes. Datos actuales y filtros del reporte; no reconstruye estados históricos.", size='Small'))
-    url = settings.PORTAL_PUBLIC_URL.rstrip('/') + reverse('correo_reporte') + '?' + query
+    url = public_url.rstrip('/') + reverse('correo_reporte') + '?' + query
     card = {'type':'AdaptiveCard', 'version':'1.2', '$schema':'http://adaptivecards.io/schemas/adaptive-card.json',
             'body':body, 'actions':[{'type':'Action.OpenUrl','title':'Ver reporte completo (iniciar sesión)','url':url}]}
     return {'type':'message','attachments':[{'contentType':'application/vnd.microsoft.card.adaptive','contentUrl':None,'content':card}]}
@@ -89,12 +89,13 @@ def enviar_recordatorio(request):
         query = request.GET.urlencode()
         if claim['user'] != request.user.pk or claim['query'] != query:
             raise ValueError('Actualiza la vista previa antes de enviar.')
-        validar_config()
+        public_url = settings.PORTAL_PUBLIC_URL or request.build_absolute_uri('/').rstrip('/')
+        validar_config(public_url)
         corte = date.fromisoformat(request.GET.get('corte') or timezone.localdate().isoformat())
         context = correo_contexto(filtrar(request.GET, corte), corte)
         if not context['rows']:
             raise ValueError('No hay compromisos pendientes para enviar con estos filtros.')
-        payload = tarjeta(context, query)
+        payload = tarjeta(context, query, public_url)
     except signing.BadSignature:
         return HttpResponse('La solicitud venció o no es válida. Recarga Reportes.', status=400)
     except (ValueError, KeyError) as error:
