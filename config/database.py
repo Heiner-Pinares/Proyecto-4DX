@@ -63,7 +63,9 @@ def database_config(env, base_dir=None):
             # Easy Connect usa explícitamente el service_name del SCAN/RAC.
             dsn = f"{host}:{port}/{service}"
         pool = (env.get("ORACLE_POOL") or "true").lower() == "true"
-        options = {"threaded": True}
+        # python-oracledb es seguro para uso multihilo de forma predeterminada.
+        # `threaded` pertenecía a cx_Oracle y create_pool() ya no lo acepta.
+        options = {}
         if pool:
             options["pool"] = True
         return {

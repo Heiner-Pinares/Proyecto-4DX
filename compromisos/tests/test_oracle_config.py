@@ -32,7 +32,7 @@ def test_oracle_uses_service_name_easy_connect_and_pool():
     assert config["USER"] == "USRFACDOC"
     assert config["PASSWORD"] == "secret"
     assert config["CONN_MAX_AGE"] == 0
-    assert config["OPTIONS"] == {"threaded": True, "pool": True}
+    assert config["OPTIONS"] == {"pool": True}
 
 
 def test_oracle_dsn_override_and_pool_disable():
@@ -40,7 +40,12 @@ def test_oracle_dsn_override_and_pool_disable():
         oracle_env(ORACLE_DSN="(DESCRIPTION=example)", ORACLE_POOL="false")
     )
     assert config["NAME"] == "(DESCRIPTION=example)"
-    assert config["OPTIONS"] == {"threaded": True}
+    assert config["OPTIONS"] == {}
+
+
+def test_oracle_pool_does_not_forward_legacy_threaded_argument():
+    config = database_config(oracle_env())
+    assert "threaded" not in config["OPTIONS"]
 
 
 def test_oracle_decodes_base64_password_without_dotenv_interpolation():
