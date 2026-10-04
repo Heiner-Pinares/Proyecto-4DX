@@ -154,7 +154,27 @@ Los ocho gráficos usan SVG y JavaScript locales, con datos alternativos accesib
 
 `/reportes/` produce DOCX agrupado por tema e iniciativa, con vencimiento original, fecha vigente, cierre, reprogramaciones, motivos y notas. La fecha de corte **evalúa la situación de los datos actuales**; no reconstruye estados pasados. La auditoría textual por sí sola no constituye un sistema completo de snapshots históricos.
 
-Excel conserva los nombres de las 17 columnas legacy y las fechas como fechas nativas. Los textos se guardan como cadenas, evitando la ejecución de fórmulas introducidas en tareas o notas. Ambos formatos excluyen eliminados y respetan filtros. Los archivos se generan en memoria con nombres controlados; no existe carga/importación de archivos en esta versión.
+Excel conserva los nombres de las 17 columnas legacy y las fechas como fechas nativas. Los textos se guardan como cadenas, evitando la ejecución de fórmulas introducidas en tareas o notas. Ambos formatos excluyen eliminados y respetan filtros. Los archivos se generan en memoria con nombres controlados.
+
+## Importar compromisos desde la matriz 4DX
+
+El comando `importar_compromisos_excel` lee la hoja `Hoja1` del formato oficial. La simulación es el comportamiento predeterminado y no escribe nada:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py importar_compromisos_excel ".\importaciones\20260928_4DX_GERENCIA_FACTURACION.xlsx"
+```
+
+Después de revisar el resumen, la carga se aplica explícitamente:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py importar_compromisos_excel ".\importaciones\20260928_4DX_GERENCIA_FACTURACION.xlsx" --aplicar
+```
+
+Cada registro usa como clave `Nro Proy. + ID Actividad`; volver a ejecutar el comando omite lo ya importado. Para refrescar esos registros con una versión posterior de la matriz, agrega `--actualizar-existentes`. La operación completa es transaccional: ante un error no guarda filas parciales. No crea tablas adicionales; la migración `0014` agrega a `compromisos` un código de origen único.
+
+La importación mapea Proyecto a Iniciativa, `Proyecto N` a Tema, Actividad a Tarea y las tres fechas del Excel a primera/segunda/tercera fecha. Para una actividad cerrada, el archivo no ofrece una fecha real separada; se usa la última fecha comprometida como fecha real y se deja constancia en Notas. Los responsables vacíos quedan como `Por asignar` y las jefaturas vacías permanecen sin asignar.
+
+Los Excel operativos no se versionan. Copia el archivo a `importaciones` directamente en el servidor (carpeta compartida, RDP o SCP) y conserva en Git solamente el importador.
 
 ## Datos de demostración
 
@@ -243,7 +263,7 @@ El dominio no contiene campos exclusivos de PostgreSQL, arrays ni enums de ese m
 
 Configura HTTPS, `DEBUG=False`, hosts y cookies seguras en producción. Mantén `.env` fuera del control de versiones. Los logs van a salida estándar: arranque, conexión, migraciones, identificadores de acciones, exportaciones y errores. No registran contraseñas ni contenidos de notas. Configura persistencia/rotación de logs y backups del motor en el despliegue.
 
-SSO/Active Directory puede integrarse mediante un backend de autenticación Django que sincronice usuarios y grupos; los servicios siguen recibiendo el usuario autenticado. Quedan para fases posteriores las notificaciones externas, importación legacy, snapshots históricos reproducibles, evaluación con cargas reales y la decisión de usar la última reprogramación sin límite como objetivo vigente.
+SSO/Active Directory puede integrarse mediante un backend de autenticación Django que sincronice usuarios y grupos; los servicios siguen recibiendo el usuario autenticado. Quedan para fases posteriores los snapshots históricos reproducibles, la evaluación con cargas reales y la decisión de usar la última reprogramación sin límite como objetivo vigente.
 
 ## Paleta visual corporativa
 

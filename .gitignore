@@ -30,5 +30,7 @@ runtime-config/
 work/
 .runtime/
 staticfiles/
+importaciones/*.xlsx
+importaciones/*.xlsm
 .pytest_cache/
 .ruff_cache/

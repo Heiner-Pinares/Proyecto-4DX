@@ -28,6 +28,14 @@ class Activos(models.Manager):
 
 
 class Compromiso(models.Model):
+    codigo_fuente = models.CharField(
+        "Código de origen",
+        max_length=100,
+        null=True,
+        blank=True,
+        unique=True,
+        editable=False,
+    )
     compromiso_hch = models.BooleanField("Compromisos de HCH", default=False)
     tema = models.CharField("Tema", max_length=150, db_index=True)
     iniciativa = models.CharField("Iniciativa", max_length=250, db_index=True)

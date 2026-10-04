@@ -1,0 +1,4 @@
+Coloca aquí el Excel oficial que se copiará al servidor.
+
+Los archivos .xlsx y .xlsm de esta carpeta están ignorados por Git para no
+publicar datos operativos. Consulta README.md para simular y aplicar la carga.
