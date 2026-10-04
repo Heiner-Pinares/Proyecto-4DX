@@ -144,14 +144,14 @@ def correo_contexto(qs, corte):
 
 def resumen_jefaturas(qs, corte):
     from datetime import timedelta
-    from django.db.models import Q
     from .models import Compromiso
     from .scoring import calcular_puntaje
 
-    fin = corte + timedelta(days=6)
-    rows = list(qs.filter(suspendida=False).filter(
-        Q(fecha_de_compromiso__lte=corte) | Q(fecha_de_compromiso__isnull=True)
-    ).order_by('objetivo', 'id'))
+    fin = corte + timedelta(days=settings.DUE_SOON_DAYS)
+    # El resumen y el tablero parten del mismo conjunto filtrado. También debe
+    # contar un compromiso que vence durante la semana cuando su fecha inicial
+    # sea posterior al corte, como ocurre en varias filas importadas de Excel.
+    rows = list(qs.filter(suspendida=False).order_by('objetivo', 'id'))
     palette = [('#DA291C','#FFF0F1'),('#996000','#FFF8DF'),('#007AA8','#EAF8FF')]
     groups = {name: {'nombre': name, 'color': palette[i][0], 'fondo': palette[i][1], 'proximos': [], 'scores': []}
               for i, (name, _) in enumerate(Compromiso.JEFATURAS)}
@@ -159,7 +159,7 @@ def resumen_jefaturas(qs, corte):
     for row in rows:
         name = row.jefatura or 'Sin jefatura asignada'
         group = groups.setdefault(name, {'nombre':name,'color':'#000000','fondo':'#F4F4F4','proximos':[],'scores':[]})
-        if not row.fecha_real and row.objetivo and corte <= row.objetivo <= fin:
+        if not row.fecha_real and row.situacion == 'Por vencer':
             group['proximos'].append(row)
         if row.fecha_real and row.fecha_real <= corte:
             score = calcular_puntaje(row)

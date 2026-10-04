@@ -74,12 +74,21 @@ def filtrar(params, hoy=None):
         for field in ["tema", "iniciativa", "tarea", "responsable_pyp", "notas"]:
             q |= Q(**{field + "__icontains": params["q"]})
         qs = qs.filter(q)
+    statuses = (
+        params.getlist("status")
+        if hasattr(params, "getlist")
+        else params.get("status", [])
+    )
+    if isinstance(statuses, str):
+        statuses = [statuses]
+    statuses = [value for value in statuses if value]
+    if statuses:
+        qs = qs.filter(estatus__in=statuses)
     for field in [
         "tema",
         "iniciativa",
         "responsable_pyp",
         "jefatura",
-        "status",
         "mes",
         "situacion",
     ]:

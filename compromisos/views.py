@@ -33,6 +33,7 @@ def filtros(request):
         "estados": EventoCompromiso.estados.filter(codigo__in=["EC", "S", "T", "D"]),
         "situaciones": SITUACIONES,
         "f": request.GET,
+        "estatus_seleccionados": request.GET.getlist("status"),
         "etapas_fecha": request.GET.getlist("etapa_fecha"),
     }
 
