@@ -125,20 +125,26 @@ def word(qs, corte):
 def correo_contexto(qs, corte):
     """Pendientes actuales iniciados hasta el corte; no reconstruye historia."""
     from django.db.models import Q
+    from .models import Compromiso
 
     rows = list(qs.filter(suspendida=False, fecha_real__isnull=True)
                 .exclude(estatus=settings.CLOSED_STATUS_CODE)
                 .filter(Q(fecha_de_compromiso__lte=corte) | Q(fecha_de_compromiso__isnull=True))
-                .order_by("tema", "iniciativa", "objetivo", "id"))
+                .order_by("jefatura", "tema", "iniciativa", "objetivo", "id"))
     resumen = {"total": len(rows), "vencidos": 0, "por_vencer": 0, "en_plazo": 0, "sin_fecha": 0}
-    colors = {"Vencido": "#DA291C", "Por vencer": "#FFCB00", "En plazo": "#009FDF", "Por definir": "#FF67B9"}
+    colors = {"Vencido": "#B42318", "Por vencer": "#8A5A00", "En plazo": "#027A48", "Por definir": "#6941C6"}
+    backgrounds = {"Vencido": "#FFF0EF", "Por vencer": "#FFF7DC", "En plazo": "#EDF8F2", "Por definir": "#F0EDFF"}
     keys = {"Vencido": "vencidos", "Por vencer": "por_vencer", "En plazo": "en_plazo", "Por definir": "sin_fecha"}
+    groups = {name: {"nombre": name, "rows": []} for name, _ in Compromiso.JEFATURAS}
     for row in rows:
         resumen[keys[row.situacion]] += 1
         row.correo_color = colors[row.situacion]
-        row.correo_texto = "#FFFFFF" if row.situacion == "Vencido" else "#000000"
+        row.correo_fondo = backgrounds[row.situacion]
         row.dias_atraso = (corte - row.objetivo).days if row.objetivo and row.objetivo < corte else 0
-    return {"rows": rows, "resumen": resumen, "corte": corte,
+        name = row.jefatura or "Sin jefatura asignada"
+        groups.setdefault(name, {"nombre": name, "rows": []})["rows"].append(row)
+    grupos = [group for group in groups.values() if group["rows"]]
+    return {"rows": rows, "grupos": grupos, "resumen": resumen, "corte": corte,
             "asunto": f"Seguimiento de compromisos en proceso | Corte {corte:%d/%m/%Y}"}
 
 

@@ -340,7 +340,8 @@ def reportes(request):
             "title": "Reportes ejecutivos",
             "today": corte.isoformat(),
             "correo_query": params.urlencode(),
-            "correo_token": token_correo(request.user, params.urlencode()),
+            "correo_token_seguimiento": token_correo(request.user, params.urlencode(), "seguimiento"),
+            "correo_token_semanal": token_correo(request.user, params.urlencode(), "semanal"),
             **filtros(request),
         },
     )

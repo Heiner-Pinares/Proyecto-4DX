@@ -4,14 +4,14 @@ import pytest
 from django.contrib.auth.models import User
 from django.test import Client
 from compromisos.correo import token_correo, construir_mensaje, enviar_remoto, PARA, COPIA
-from compromisos.models import EventoCompromiso
+from compromisos.models import Compromiso, EventoCompromiso
 pytestmark=pytest.mark.django_db
 
 
 def test_recipients_html_and_duplicate(client,settings):
     settings.CORREO_SSH_HOST='internal';settings.CORREO_SSH_USER='user';settings.CORREO_SSH_PASSWORD='secret'
     user=User.objects.create_superuser('correo_test',password='test');client.force_login(user)
-    query='corte=2026-09-29';token=token_correo(user,query)
+    query='corte=2026-09-29';token=token_correo(user,query,'semanal')
     with patch('compromisos.correo.enviar_remoto') as send:
         result=client.post('/reportes/correo/enviar/?'+query,{'token':token,'to':'other@example.com','cc':'other@example.com'})
         assert result.status_code==302
@@ -28,6 +28,33 @@ def test_recipients_html_and_duplicate(client,settings):
     assert secure.post('/reportes/correo/enviar/?'+query,{'token':token}).status_code==403
     client.force_login(User.objects.create_user('lector_correo'))
     assert client.post('/reportes/correo/enviar/?'+query,{'token':token}).status_code==403
+
+
+def test_followup_button_sends_its_own_dynamic_html(client, settings):
+    settings.CORREO_SSH_HOST='internal';settings.CORREO_SSH_USER='user';settings.CORREO_SSH_PASSWORD='secret'
+    user=User.objects.create_superuser('seguimiento_test', password='test');client.force_login(user)
+    Compromiso.objects.create(
+        jefatura='Jefatura de Facturacion a Clientes', tema='Proyecto 4DX', iniciativa='Portal',
+        tarea='Validar el nuevo correo', responsable_pyp='Ana', status='EC',
+        fecha_de_compromiso=date(2026, 9, 1), fecha_de_vencimiento=date(2026, 9, 28),
+    )
+    query='corte=2026-09-29'; token=token_correo(user, query, 'seguimiento')
+    page=client.get('/reportes/?'+query).content.decode()
+    assert '/reportes/correo/seguimiento/enviar/' in page
+    assert '/reportes/correo/enviar/' in page
+    with patch('compromisos.correo.enviar_remoto') as send:
+        response=client.post('/reportes/correo/seguimiento/enviar/?'+query, {'token':token})
+        assert response.status_code == 302
+        msg=send.call_args.args[0]
+        assert msg['To']==PARA and msg['Cc']==COPIA
+        assert msg['Subject']=='Seguimiento de compromisos 4DX · Corte 29/09/2026'
+        html=msg.get_body(preferencelist=('html',)).get_content()
+        assert 'Recordatorio de compromisos' in html
+        assert 'Validar el nuevo correo' in html
+        assert 'Jefatura de Facturacion a Clientes' in html
+        assert 'Estado general de cumplimiento' not in html
+    wrong=token_correo(user, query, 'semanal')
+    assert client.post('/reportes/correo/seguimiento/enviar/?'+query, {'token':wrong}).status_code == 400
 
 
 def test_sendmail_fixed_envelope_and_failure(settings,tmp_path):

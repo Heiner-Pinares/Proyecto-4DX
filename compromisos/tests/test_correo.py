@@ -48,6 +48,8 @@ def test_pending_scope_counts_and_escaping(client):
     assert '<script>' not in html and '&lt;script&gt;' in html
     assert '<img src=x' not in html
     assert '2 días de atraso' in html
+    assert 'Recordatorio de compromisos' in html
+    assert 'TOTAL EN PROCESO' in html
 
 
 def test_filters_download_empty_and_report_embed(client):
@@ -64,4 +66,5 @@ def test_filters_download_empty_and_report_embed(client):
     assert response.status_code == 200
     assert 'corte=2026-09-10' in response.context['correo_query']
     assert 'responsable_pyp=Ana' in response.context['correo_query']
-    assert '<iframe' in response.content.decode()
+    page = response.content.decode()
+    assert '<iframe' in page

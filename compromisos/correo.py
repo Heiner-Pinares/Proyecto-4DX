@@ -1,4 +1,4 @@
-"""Envío SSH/sendmail del resumen semanal con destinatarios fijos."""
+"""Envío SSH/sendmail de reportes 4DX con destinatarios fijos."""
 import socket
 import uuid
 from datetime import date
@@ -22,7 +22,7 @@ from django.utils import timezone
 
 from .models import EventoCompromiso
 from .permissions import require
-from .reports import resumen_jefaturas
+from .reports import correo_contexto, resumen_jefaturas
 from .selectors import filtrar
 
 PARA = 'c27826@claro.com.pe'
@@ -30,19 +30,27 @@ COPIA = 'c28171@claro.com.pe'
 SALT = '4dx-correo-semanal'
 
 
-def token_correo(user, query):
-    return signing.dumps({'user':user.pk,'query':query,'id':str(uuid.uuid4())},salt=SALT)
+def token_correo(user, query, tipo='semanal'):
+    return signing.dumps(
+        {'user': user.pk, 'query': query, 'tipo': tipo, 'id': str(uuid.uuid4())},
+        salt=SALT,
+    )
 
 
-def construir_mensaje(html, corte):
+def construir_mensaje(html, corte, tipo='semanal'):
     msg = EmailMessage(policy=SMTP)
     msg['From'] = formataddr(('4DX Facturación', '4dx@claro.com.pe'))
     msg['To'] = PARA
     msg['Cc'] = COPIA
-    msg['Subject'] = f'Resumen semanal 4DX por jefatura · Corte {corte:%d/%m/%Y}'
+    if tipo == 'seguimiento':
+        msg['Subject'] = f'Seguimiento de compromisos 4DX · Corte {corte:%d/%m/%Y}'
+        texto = 'Recordatorio de compromisos 4DX. Abre este mensaje en un cliente compatible con HTML para consultar el detalle.'
+    else:
+        msg['Subject'] = f'Resumen semanal 4DX por jefatura · Corte {corte:%d/%m/%Y}'
+        texto = 'Resumen semanal de compromisos 4DX. Abre este mensaje en un cliente compatible con HTML para ver el detalle por jefatura.'
     msg['Date'] = formatdate(localtime=True)
     msg['Message-ID'] = make_msgid(domain='claro.com.pe')
-    msg.set_content('Resumen semanal de compromisos 4DX. Abre este mensaje en un cliente compatible con HTML para ver el detalle por jefatura.')
+    msg.set_content(texto)
     msg.add_alternative(html,subtype='html')
     return msg
 
@@ -75,12 +83,22 @@ def enviar_remoto(msg):
 @login_required
 @require_POST
 def enviar_resumen(request):
+    return _enviar_reporte(request, 'semanal')
+
+
+@login_required
+@require_POST
+def enviar_seguimiento(request):
+    return _enviar_reporte(request, 'seguimiento')
+
+
+def _enviar_reporte(request, tipo):
     require(request.user,edit=True)
     query = request.GET.urlencode()
     destination = reverse('reportes') + '?' + query
     try:
         claim = signing.loads(request.POST.get('token',''),salt=SALT,max_age=3600)
-        if claim['user'] != request.user.pk or claim['query'] != query:
+        if claim['user'] != request.user.pk or claim['query'] != query or claim.get('tipo') != tipo:
             return HttpResponse('Actualiza el resumen antes de enviar.',status=400)
         corte = date.fromisoformat(request.GET.get('corte') or timezone.localdate().isoformat())
     except (signing.BadSignature,ValueError,KeyError):
@@ -88,10 +106,16 @@ def enviar_resumen(request):
     if not all([settings.CORREO_SSH_HOST,settings.CORREO_SSH_USER,settings.CORREO_SSH_PASSWORD]):
         messages.error(request,'Falta configurar la conexión SSH de correo en .env.')
         return redirect(destination)
-    context = resumen_jefaturas(filtrar(request.GET,corte),corte)
-    context['tablero_url'] = (settings.PORTAL_PUBLIC_URL or request.build_absolute_uri('/').rstrip('/')) + reverse('dashboard')
-    html = render_to_string('resumen_semanal.html',context)
-    msg = construir_mensaje(html,corte)
+    qs = filtrar(request.GET, corte)
+    if tipo == 'seguimiento':
+        context = correo_contexto(qs, corte)
+        template = 'correo_compromisos.html'
+    else:
+        context = resumen_jefaturas(qs, corte)
+        context['tablero_url'] = (settings.PORTAL_PUBLIC_URL or request.build_absolute_uri('/').rstrip('/')) + reverse('dashboard')
+        template = 'resumen_semanal.html'
+    html = render_to_string(template, context)
+    msg = construir_mensaje(html, corte, tipo)
     try:
         with transaction.atomic():
             record = EventoCompromiso.envios.create(canal='correo', token=claim['id'],usuario=request.user.get_username(),corte=corte)
@@ -114,6 +138,7 @@ def enviar_resumen(request):
         messages.error(request,'No se pudo confirmar el envío. Comprueba la conexión a la red corporativa o VPN y revisa el correo antes de reintentar.')
     else:
         record.estado = 'aceptado'
-        messages.success(request,f'El servidor de correo aceptó el resumen para {PARA}, con copia a {COPIA}. La entrega final depende del servidor de correo.')
+        nombre = 'recordatorio de seguimiento' if tipo == 'seguimiento' else 'resumen semanal'
+        messages.success(request,f'El servidor de correo aceptó el {nombre} para {PARA}, con copia a {COPIA}. La entrega final depende del servidor de correo.')
     record.save(update_fields=['estado'])
     return redirect(destination)
