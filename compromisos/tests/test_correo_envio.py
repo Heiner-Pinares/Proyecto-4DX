@@ -52,6 +52,7 @@ def test_followup_button_sends_its_own_dynamic_html(client, settings):
         assert 'Recordatorio de compromisos' in html
         assert 'Validar el nuevo correo' in html
         assert 'Jefatura de Facturacion a Clientes' in html
+        assert '<details class="group"' in html
         assert 'Estado general de cumplimiento' not in html
     wrong=token_correo(user, query, 'semanal')
     assert client.post('/reportes/correo/seguimiento/enviar/?'+query, {'token':wrong}).status_code == 400

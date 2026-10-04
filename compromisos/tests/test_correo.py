@@ -50,6 +50,8 @@ def test_pending_scope_counts_and_escaping(client):
     assert '2 días de atraso' in html
     assert 'Recordatorio de compromisos' in html
     assert 'TOTAL EN PROCESO' in html
+    assert '<details class="group"' in html
+    assert '<summary' in html
 
 
 def test_filters_download_empty_and_report_embed(client):
