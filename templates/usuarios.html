@@ -1,1 +1,43 @@
-{% extends 'base.html' %}{% block content %}<div class="detail-grid"><section class="panel padded"><h2>Equipo y accesos</h2><div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Área</th><th>Gerencia / Dirección</th><th>Jefe</th><th>Rol</th><th>Acceso</th></tr></thead><tbody>{% for u in usuarios %}<tr><td>{{ u.username }}<small>{{ u.perfil_4dx.nombre_completo|default:u.get_full_name }}</small><small>{{ u.email }}</small></td><td>{{ u.perfil_4dx.area|default:'—' }}</td><td>{{ u.perfil_4dx.gerencia|default:'—' }}<small>{{ u.perfil_4dx.direccion|default:'—' }}</small></td><td>{{ u.perfil_4dx.jefe|default:'—' }}</td><td>{% for g in u.groups.all %}{{ g.name }} {% endfor %}{% if u.is_superuser %}Superusuario{% endif %}</td><td><a href="{% url 'usuario_editar' u.pk %}">Editar</a> · <a href="{% url 'usuario_password' u.pk %}">Contraseña</a><small>{% if u.is_active %}Activo{% else %}Inactivo{% endif %}</small></td></tr>{% endfor %}</tbody></table></div></section><form method="post" class="panel padded">{% csrf_token %}<h2>Crear usuario</h2>{{ form.as_p }}<button class="button">Crear usuario</button></form></div>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<div class="users-layout">
+  <section class="panel padded users-panel">
+    <div class="users-heading">
+      <div>
+        <h2>Equipo y accesos</h2>
+        <p class="muted">{{ total_usuarios }} usuario{{ total_usuarios|pluralize }}</p>
+      </div>
+      <form method="get" class="users-search" role="search">
+        <label for="users-query">Buscar usuarios</label>
+        <div>
+          <input id="users-query" name="q" value="{{ q }}" placeholder="Nombre, usuario, correo, área o jefe…" autocomplete="off">
+          <button class="button" type="submit">Buscar</button>
+          {% if q %}<a class="button secondary" href="{% url 'usuarios' %}">Limpiar</a>{% endif %}
+        </div>
+      </form>
+    </div>
+    <div class="table-wrap users-table-wrap">
+      <table class="users-table">
+        <thead><tr><th>Usuario</th><th>Área</th><th>Gerencia / Dirección</th><th>Jefe</th><th>Rol</th><th>Acceso</th></tr></thead>
+        <tbody>
+          {% for u in usuarios %}
+          <tr>
+            <td>{{ u.username }}<small>{{ u.perfil_4dx.nombre_completo|default:u.get_full_name }}</small><small>{{ u.email }}</small></td>
+            <td>{{ u.perfil_4dx.area|default:'—' }}</td>
+            <td>{{ u.perfil_4dx.gerencia|default:'—' }}<small>{{ u.perfil_4dx.direccion|default:'—' }}</small></td>
+            <td>{{ u.perfil_4dx.jefe|default:'—' }}</td>
+            <td>{% for g in u.groups.all %}{{ g.name }} {% endfor %}{% if u.is_superuser %}Superusuario{% endif %}</td>
+            <td><a href="{% url 'usuario_editar' u.pk %}">Editar</a> · <a href="{% url 'usuario_password' u.pk %}">Contraseña</a><small>{% if u.is_active %}Activo{% else %}Inactivo{% endif %}</small></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="empty">No se encontraron usuarios con “{{ q }}”.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <form method="post" class="panel padded users-create-form">
+    {% csrf_token %}<h2>Crear usuario</h2>{{ form.as_p }}<button class="button">Crear usuario</button>
+  </form>
+</div>
+{% endblock %}

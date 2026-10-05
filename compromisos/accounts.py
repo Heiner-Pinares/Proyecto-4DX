@@ -88,6 +88,24 @@ def usuarios(request):
     profiles = profiles_for(users)
     for user in users:
         user.perfil_4dx = profiles[user.pk]
+    query = request.GET.get("q", "").strip()
+    if query:
+        needle = query.casefold()
+        users = [
+            user
+            for user in users
+            if needle
+            in " ".join(
+                [
+                    user.username,
+                    user.first_name,
+                    user.last_name,
+                    user.email,
+                    *user.perfil_4dx.values(),
+                    *(group.name for group in user.groups.all()),
+                ]
+            ).casefold()
+        ]
     return render(
         request,
         "usuarios.html",
@@ -95,6 +113,8 @@ def usuarios(request):
             "title": "Usuarios",
             "form": form,
             "usuarios": users,
+            "q": query,
+            "total_usuarios": len(users),
         },
     )
 

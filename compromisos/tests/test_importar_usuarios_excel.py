@@ -97,3 +97,19 @@ def test_user_administration_displays_organization(client, tmp_path):
     assert response.status_code == 200
     assert "Área A" in response.content.decode()
     assert "Dirección A" in response.content.decode()
+
+
+def test_user_administration_searches_all_profile_fields(client, tmp_path):
+    path = tmp_path / "usuarios.xlsx"
+    workbook(path)
+    call_command("init_portal", stdout=StringIO())
+    call_command("importar_usuarios_excel", str(path), stdout=StringIO())
+    admin = User.objects.create_superuser("admin_search", password="test-password")
+    client.force_login(admin)
+
+    response = client.get("/usuarios/", {"q": "Área C"})
+    content = response.content.decode()
+    assert response.status_code == 200
+    assert "stephanie.delacruz" in content
+    assert "ana.perez" not in content
+    assert "1 usuario" in content
