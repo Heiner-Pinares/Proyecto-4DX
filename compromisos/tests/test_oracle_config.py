@@ -97,6 +97,15 @@ def test_auxiliary_records_do_not_keep_nullable_origin_unique_constraint():
     assert "evento_origen_unico" not in constraint_names
 
 
+def test_reprogramming_uses_single_nullable_unique_key_for_oracle():
+    constraint_names = {
+        constraint.name for constraint in EventoCompromiso._meta.constraints
+    }
+    field = EventoCompromiso._meta.get_field("reprogramacion_clave")
+    assert "evento_numero_unico" not in constraint_names
+    assert field.unique and field.null
+
+
 def test_oracle_decodes_base64_password_without_dotenv_interpolation():
     raw = "p#a ss${HOME}'"
     encoded = base64.b64encode(raw.encode()).decode()

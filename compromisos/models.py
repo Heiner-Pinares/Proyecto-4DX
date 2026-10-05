@@ -207,6 +207,9 @@ class EventoCompromiso(models.Model):
     usuario = models.CharField(max_length=150, blank=True)
     fecha = models.DateTimeField(default=timezone.now)
     numero_reprogramacion = models.PositiveIntegerField(null=True, blank=True)
+    reprogramacion_clave = models.CharField(
+        max_length=80, null=True, blank=True, unique=True, editable=False
+    )
     fecha_anterior = models.DateField(null=True, blank=True)
     fecha_nueva = models.DateField(null=True, blank=True)
     motivo = models.TextField(blank=True)
@@ -242,7 +245,6 @@ class EventoCompromiso(models.Model):
         verbose_name_plural = "registros del portal"
         ordering = ["-fecha", "-id"]
         constraints = [
-            models.UniqueConstraint(fields=["compromiso", "numero_reprogramacion"], name="evento_numero_unico"),
             models.UniqueConstraint(fields=["canal", "token"], name="registro_envio_unico"),
             models.CheckConstraint(condition=(
                 models.Q(tipo="historial", compromiso__isnull=False, numero_reprogramacion__isnull=True)
@@ -256,6 +258,17 @@ class EventoCompromiso(models.Model):
         ]
 
     def save(self, *args, **kwargs):
+        self.reprogramacion_clave = (
+            f"{self.compromiso_id}:{self.numero_reprogramacion}"
+            if self.tipo == "reprogramacion"
+            and self.compromiso_id is not None
+            and self.numero_reprogramacion is not None
+            else None
+        )
+        if kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = set(kwargs["update_fields"]) | {
+                "reprogramacion_clave"
+            }
         if self.tipo == 'envio' and not self.estado:
             self.estado = 'en_curso'
         if self.tipo == 'estado' and self.estado_id is None:

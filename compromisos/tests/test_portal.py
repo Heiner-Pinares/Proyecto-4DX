@@ -57,6 +57,7 @@ def test_creation_and_edit(c, users):
     assert updated.meta == 110
     assert "95" in updated.historial.first().descripcion
     assert updated.updated_by == "Editor"
+    assert updated.historial.count() == 2
 
 
 def test_soft_delete_restore_purge(c, users):
@@ -85,6 +86,7 @@ def test_reschedules(c, users, count):
     assert c.reprogramaciones.count() == count
     assert fecha_objetivo(c) == date(2026, 9, 10 + min(count, 2))
     assert c.reprogramaciones.last().numero_reprogramacion == count
+    assert c.reprogramaciones.last().reprogramacion_clave == f"{c.pk}:{count}"
     assert c.historial.filter(accion="REPROGRAMADO").count() == count
 
 
@@ -268,6 +270,26 @@ def test_detail_actions_and_forms(c, users, client, data):
     )
     c.refresh_from_db()
     assert c.tarea == "Editado"
+
+
+def test_http_edit_reschedule_and_delete_do_not_conflict_in_history(c, users, client):
+    client.force_login(users["Administrador"])
+    response = client.post(
+        f"/compromisos/{c.pk}/celda/",
+        {"field": "tarea", "value": "Edición HTTP", "version": c.updated_at.isoformat()},
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+
+    response = client.post(
+        f"/compromisos/{c.pk}/reprogramar/",
+        {"fecha_nueva": "2026-09-20", "motivo": "Validación integral"},
+    )
+    assert response.status_code == 302
+
+    response = client.post(f"/compromisos/{c.pk}/eliminar/", {})
+    assert response.status_code == 302
+    assert Compromiso.all_objects.get(pk=c.pk).deleted_at is not None
 
 
 def test_pagination(c, users, client, data):
