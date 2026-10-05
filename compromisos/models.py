@@ -197,6 +197,7 @@ class EventoCompromiso(models.Model):
         ("historial", "Historial"), ("reprogramacion", "Reprogramación"),
         ("estado", "Estado configurable"), ("envio", "Envío"),
         ("sesion", "Sesión"), ("admin", "Auditoría administrativa"),
+        ("perfil", "Perfil de usuario"),
     ]]
     tipo = models.CharField(max_length=20, choices=TIPOS, default="historial", db_index=True)
     compromiso = models.ForeignKey(Compromiso, null=True, blank=True, on_delete=models.CASCADE, related_name="eventos")
@@ -233,6 +234,7 @@ class EventoCompromiso(models.Model):
     envios = TipoManager('envio')
     sesiones = TipoManager('sesion')
     auditoria = TipoManager('admin')
+    perfiles = TipoManager('perfil')
 
     class Meta:
         db_table = "registros_portal4dx"
@@ -249,6 +251,7 @@ class EventoCompromiso(models.Model):
                 | models.Q(tipo="envio", canal__in=["teams", "correo"], token__isnull=False, corte__isnull=False)
                 | models.Q(tipo="sesion", session_key__isnull=False, expire_date__isnull=False)
                 | models.Q(tipo="admin", user__isnull=False, action_flag__in=[1, 2, 3])
+                | models.Q(tipo="perfil", user__isnull=False)
             ), name="registro_tipo_campos_validos"),
         ]
 

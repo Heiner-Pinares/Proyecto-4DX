@@ -8,6 +8,29 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import EventoCompromiso
 from .permissions import require
+from .profiles import profile_data, profiles_for, save_profile
+
+
+PROFILE_FORM_FIELDS = {
+    "area": "Área",
+    "gerencia": "Gerencia",
+    "direccion": "Dirección",
+    "jefe": "Jefe",
+}
+
+
+def add_profile_fields(form):
+    for name, label in PROFILE_FORM_FIELDS.items():
+        form.fields[name] = forms.CharField(label=label, max_length=250, required=False)
+
+
+def save_form_profile(user, cleaned_data, current=None):
+    current = current or {}
+    save_profile(
+        user,
+        nombre_completo=current.get("nombre_completo") or user.get_full_name(),
+        **{name: cleaned_data.get(name, "") for name in PROFILE_FORM_FIELDS},
+    )
 
 
 class UsuarioForm(UserCreationForm):
@@ -20,6 +43,10 @@ class UsuarioForm(UserCreationForm):
         model = User
         fields = ["username", "first_name", "last_name", "email", "rol"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        add_profile_fields(self)
+
 
 class UsuarioEditForm(forms.ModelForm):
     rol = forms.ModelChoiceField(
@@ -30,6 +57,10 @@ class UsuarioEditForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ["first_name", "last_name", "email", "is_active", "rol"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        add_profile_fields(self)
 
 
 class EstadoForm(forms.ModelForm):
@@ -50,15 +81,20 @@ def usuarios(request):
         with transaction.atomic():
             user = form.save()
             user.groups.set([form.cleaned_data["rol"]])
+            save_form_profile(user, form.cleaned_data)
         messages.success(request, "Usuario creado correctamente.")
         return redirect("usuarios")
+    users = list(User.objects.prefetch_related("groups").order_by("username"))
+    profiles = profiles_for(users)
+    for user in users:
+        user.perfil_4dx = profiles[user.pk]
     return render(
         request,
         "usuarios.html",
         {
             "title": "Usuarios",
             "form": form,
-            "usuarios": User.objects.prefetch_related("groups").order_by("username"),
+            "usuarios": users,
         },
     )
 
@@ -67,10 +103,11 @@ def usuarios(request):
 def usuario_editar(request, pk):
     require(request.user, administrative=True)
     target = get_object_or_404(User, pk=pk)
+    current_profile = profile_data(EventoCompromiso.perfiles.filter(user=target).order_by("pk").first())
     form = UsuarioEditForm(
         request.POST if request.method == "POST" else None,
         instance=target,
-        initial={"rol": target.groups.first()},
+        initial={"rol": target.groups.first(), **current_profile},
     )
     if request.method == "POST" and form.is_valid():
         if target.pk == request.user.pk and (
@@ -86,6 +123,7 @@ def usuario_editar(request, pk):
             with transaction.atomic():
                 user = form.save()
                 user.groups.set([form.cleaned_data["rol"]])
+                save_form_profile(user, form.cleaned_data, current_profile)
             messages.success(request, "Usuario actualizado.")
             return redirect("usuarios")
     return render(

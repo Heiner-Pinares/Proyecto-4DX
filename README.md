@@ -176,6 +176,26 @@ La importación mapea Proyecto a Iniciativa, `Proyecto N` a Tema, Actividad a Ta
 
 Los Excel operativos no se versionan. Copia el archivo a `importaciones` directamente en el servidor (carpeta compartida, RDP o SCP) y conserva en Git solamente el importador.
 
+## Importar cuentas desde el padrón de Operaciones Comerciales
+
+El comando `importar_usuarios_excel` procesa la hoja `OPERACIONES` y exige las columnas `Cod. Comunicación`, `Correo electrónico`, `Jefe`, `Nombre completo`, `Área`, `Gerencia` y `Dirección`. Antes de escribir en Oracle, valida el archivo en el servidor:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py importar_usuarios_excel ".\importaciones\Operaciones Comerciales.xlsx" --solo-validar
+```
+
+Si la validación termina correctamente, crea las cuentas y sus perfiles organizacionales:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py importar_usuarios_excel ".\importaciones\Operaciones Comerciales.xlsx"
+```
+
+El usuario de acceso se forma con el primer nombre y el primer apellido, en minúsculas y separados por punto, por ejemplo `ana.torres`. Cuando dos personas producen el mismo usuario, el comando agrega un número de forma determinista (`carlos.farfan2`). La contraseña inicial es `Cod. Comunicación` y se guarda exclusivamente mediante el hash seguro de Django; el código original no se almacena en el perfil ni aparece en la salida del comando.
+
+Las cuentas nuevas reciben el rol **Consulta**. Área, gerencia, dirección y jefe se guardan como perfiles dentro de la tabla consolidada `registros_portal4dx`, por lo que la importación no crea una tabla física adicional. El Excel contiene datos personales y contraseñas iniciales: cópialo directamente a `importaciones` en el servidor y no lo agregues a Git.
+
+Volver a ejecutar el comando actualiza nombres y datos organizacionales, pero conserva la contraseña y el rol de las cuentas existentes. Usa `--restablecer-contrasenas` solo si deseas volver a asignar los códigos del archivo como contraseñas, y `--actualizar-rol --rol Editor` o `--actualizar-rol --rol Admin` únicamente cuando se haya autorizado ese cambio de permisos.
+
 ## Datos de demostración
 
 ```bash
