@@ -10,7 +10,7 @@ from django.core.management import call_command
 from docx import Document
 from openpyxl import load_workbook
 
-from compromisos.indicators import metricas
+from compromisos.indicators import evolucion_mensual, metricas
 from compromisos.models import Compromiso
 from compromisos.reports import excel, word
 from compromisos.selectors import base, filtrar
@@ -336,6 +336,48 @@ def test_metrics_denominators(c, users, data):
     assert k["cumplimiento_cierre"] == 100
     assert k["cumplimiento_plazo"] == 100
     assert k["total"] == 2
+
+
+def test_monthly_first_date_and_reschedule_charts(c, users, data):
+    operar(
+        c.pk,
+        "cerrar",
+        {"fecha_real": date(2026, 9, 9), "puntaje": 100},
+        users["Editor"],
+    )
+    rescheduled = guardar(
+        {
+            **data,
+            "tarea": "Compromiso reprogramado",
+            "fecha_de_vencimiento": date(2026, 9, 15),
+        },
+        users["Editor"],
+    )
+    operar(
+        rescheduled.pk,
+        "reprogramar",
+        {"fecha_nueva": date(2026, 9, 20), "motivo": "Dependencia externa"},
+        users["Editor"],
+    )
+    guardar(
+        {
+            **data,
+            "tarea": "Compromiso de octubre",
+            "fecha_de_compromiso": date(2026, 10, 1),
+            "fecha_de_vencimiento": date(2026, 10, 12),
+        },
+        users["Editor"],
+    )
+
+    chart = evolucion_mensual(base(date(2026, 10, 5)))
+
+    assert chart["labels"] == ["Sep 2026", "Oct 2026"]
+    assert chart["totales"] == [2, 1]
+    assert chart["cumplidos"] == [1, 0]
+    assert chart["reprogramados"] == [1, 0]
+    assert chart["cumplimiento"] == [50.0, 0.0]
+    assert chart["meta"] == 95.0
+    assert metricas(base(date(2026, 10, 5)))["reprogramados"] == 1
 
 
 def test_csrf(c, users):

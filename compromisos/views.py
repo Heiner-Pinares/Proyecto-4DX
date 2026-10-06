@@ -5,14 +5,13 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.db.models.functions import TruncMonth, TruncWeek
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from .forms import AccionForm, CompromisoForm
-from .indicators import agrupados, metricas
+from .indicators import agrupados, evolucion_mensual, metricas
 from .models import Compromiso, EventoCompromiso
 from .permissions import require
 from .reports import excel, word, correo_contexto
@@ -220,6 +219,7 @@ def papelera(request):
 @login_required
 def indicadores(request):
     qs = filtrar(request.GET)
+    evolucion = evolucion_mensual(qs)
     responsables = agrupados(qs, "responsable_pyp")
     sort = request.GET.get("orden", "nombre")
     allowed = [
@@ -244,14 +244,6 @@ def indicadores(request):
         )
     status = list(
         qs.order_by().values("estatus").annotate(total=Count("id")).order_by("estatus")
-    )
-    meses = agrupados(qs.annotate(periodo=TruncMonth("fecha_de_compromiso")), "periodo")
-    reschedules = list(
-        EventoCompromiso.objects.filter(tipo="reprogramacion", compromiso__in=qs)
-        .annotate(periodo=TruncMonth("fecha"))
-        .values("periodo")
-        .annotate(total=Count("id"))
-        .order_by("periodo")
     )
     charts = [
         {
@@ -283,32 +275,17 @@ def indicadores(request):
     charts.extend(
         [
             {
-                "title": "Evolución mensual del cumplimiento de fechas",
-                "type": "line",
-                "labels": [r["nombre"] for r in meses],
-                "values": [r["cumplimiento"] for r in meses],
-            },
-            {
                 "title": "Vencidos por responsable",
                 "labels": [r["nombre"] for r in responsables],
                 "values": [r["vencidos"] for r in responsables],
             },
-            {
-                "title": "Reprogramaciones por mes",
-                "labels": [r["periodo"].strftime("%m/%Y") for r in reschedules],
-                "values": [r["total"] for r in reschedules],
-            },
         ]
     )
     jefaturas = agrupados(qs, "jefatura")
-    completed = list(qs.filter(fecha_real__isnull=False, suspendida=False, cumplimiento_fechas=100).annotate(semana=TruncWeek("fecha_real")).values("semana").annotate(total=Count("id")).order_by("semana"))
-    replanned = list(EventoCompromiso.objects.filter(tipo="reprogramacion", compromiso__in=qs).annotate(semana=TruncWeek("fecha")).values("semana").annotate(total=Count("id")).order_by("semana"))
     overview = [
         {"title": "Cumplimiento por jefaturas", "type": "vertical", "unit": "%", "labels": [r["nombre"].replace("Jefatura de ", "") for r in jefaturas], "values": [r["cumplimiento"] for r in jefaturas]},
         {"title": "Estado de los compromisos", "type": "donut", "labels": [dict(Compromiso._meta.get_field("status").choices).get(r["estatus"], r["estatus"]) for r in status], "values": [r["total"] for r in status]},
     ]
-    for label, data in [("Evolutivo de compromisos culminados a primera fecha", completed), ("Evolutivo de reprogramaciones", replanned)]:
-        overview.append({"title": label, "type": "line", "unit": "", "labels": [r["semana"].strftime("%d/%m/%y") for r in data], "values": [r["total"] for r in data]})
     charts = overview + charts
     return render(
         request,
@@ -318,6 +295,7 @@ def indicadores(request):
             "k": metricas(qs),
             "responsables": responsables,
             "charts": charts,
+            "evolucion": evolucion,
             **filtros(request),
         },
     )
