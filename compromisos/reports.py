@@ -14,8 +14,7 @@ from .services import situacion
 
 log = logging.getLogger(__name__)
 LEGACY = [
-    ("Compromisos de HCH", "compromiso_hch"),
-    ("TEMA", "tema"),
+    ("PROYECTO", "proyecto"),
     ("INICIATIVA", "iniciativa"),
     ("TAREA", "tarea"),
     ("STATUS", "status"),
@@ -53,7 +52,7 @@ def excel(qs):
         cell.fill = PatternFill("solid", fgColor="000000")
     for col in sheet.columns:
         sheet.column_dimensions[col[0].column_letter].width = (
-            24 if col[0].column != 4 else 70
+            24 if col[0].column != 3 else 70
         )
     sheet.freeze_panes = "A2"
     sheet.auto_filter.ref = sheet.dimensions
@@ -72,17 +71,18 @@ def word(qs, corte):
     doc.add_heading("Reporte ejecutivo de compromisos", 0)
     doc.add_paragraph(f"Estados actualizados al cierre del {corte:%d/%m/%Y}")
     doc.add_paragraph(
-        "Seguimiento agrupado por tema e iniciativa. La situación del plazo se evalúa a la fecha de corte sobre los datos actuales; este reporte no reconstruye versiones históricas."
+        "Seguimiento agrupado por proyecto e iniciativa. La situación del plazo se evalúa a la fecha de corte sobre los datos actuales; este reporte no reconstruye versiones históricas."
     )
-    rows = qs.order_by("tema", "iniciativa", "id")
+    rows = qs.order_by("proyecto", "iniciativa", "id")
 
     def fmt(d):
         return d.strftime("%d/%m/%Y") if d else "Por definir"
 
-    for tema, temas in groupby(rows, key=lambda c: c.tema):
-        doc.add_heading(tema, 1)
-        for iniciativa, items in groupby(temas, key=lambda c: c.iniciativa):
-            doc.add_heading(iniciativa, 2)
+    for proyecto, proyectos in groupby(rows, key=lambda c: c.proyecto):
+        doc.add_heading(proyecto, 1)
+        for iniciativa, items in groupby(proyectos, key=lambda c: c.iniciativa):
+            if iniciativa:
+                doc.add_heading(iniciativa, 2)
             for c in items:
                 cierre = (
                     "Cerrado" if c.estatus_actual == settings.CLOSED_STATUS_CODE else c.estatus_actual
@@ -130,7 +130,7 @@ def correo_contexto(qs, corte):
     rows = list(qs.filter(suspendida=False, fecha_real__isnull=True)
                 .exclude(estatus=settings.CLOSED_STATUS_CODE)
                 .filter(Q(fecha_de_compromiso__lte=corte) | Q(fecha_de_compromiso__isnull=True))
-                .order_by("jefatura", "tema", "iniciativa", "objetivo", "id"))
+                .order_by("jefatura", "proyecto", "iniciativa", "objetivo", "id"))
     resumen = {"total": len(rows), "vencidos": 0, "por_vencer": 0, "en_plazo": 0, "sin_fecha": 0}
     colors = {"Vencido": "#B42318", "Por vencer": "#8A5A00", "En plazo": "#027A48", "Por definir": "#6941C6"}
     backgrounds = {"Vencido": "#FFF0EF", "Por vencer": "#FFF7DC", "En plazo": "#EDF8F2", "Por definir": "#F0EDFF"}

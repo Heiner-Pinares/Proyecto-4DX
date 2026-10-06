@@ -217,9 +217,8 @@ def fields_for(item, filename, sheet_name):
         )
     return {
         "codigo_fuente": item.source_key,
-        "compromiso_hch": False,
-        "tema": f"Proyecto {item.project_number}",
-        "iniciativa": item.project,
+        "proyecto": item.project,
+        "iniciativa": "",
         "tarea": item.activity,
         "status": "EC",
         "responsable_pyp": item.owner,
@@ -283,6 +282,16 @@ class Command(BaseCommand):
             action="store_true",
             help="Sobrescribe registros importados anteriormente; sin esta opción se omiten",
         )
+        parser.add_argument(
+            "--reemplazar-todo",
+            action="store_true",
+            help="Elimina todos los compromisos y los sustituye por el Excel validado",
+        )
+        parser.add_argument(
+            "--confirmar",
+            default="",
+            help="Para aplicar un reemplazo total debe indicar literalmente REEMPLAZAR",
+        )
 
     def handle(self, *args, **options):
         path = Path(options["archivo"]).expanduser().resolve()
@@ -291,18 +300,37 @@ class Command(BaseCommand):
         if path.suffix.lower() not in {".xlsx", ".xlsm"}:
             raise CommandError("El archivo debe tener extensión .xlsx o .xlsm")
         rows, warnings = read_rows(path, options["hoja"])
+        replace_all = options["reemplazar_todo"]
+        if replace_all and not rows:
+            raise CommandError(
+                "El Excel no contiene compromisos; el reemplazo total fue cancelado."
+            )
+        current_total = Compromiso.all_objects.count()
         existing = {
             row.codigo_fuente: row
             for row in Compromiso.all_objects.filter(
                 codigo_fuente__in=[item.source_key for item in rows]
             )
         }
-        to_create = [item for item in rows if item.source_key not in existing]
-        to_update = [item for item in rows if item.source_key in existing]
+        to_create = (
+            rows
+            if replace_all
+            else [item for item in rows if item.source_key not in existing]
+        )
+        to_update = (
+            [] if replace_all else [item for item in rows if item.source_key in existing]
+        )
 
         self.stdout.write(f"Archivo validado: {len(rows)} compromisos.")
         self.stdout.write(f"Nuevos: {len(to_create)}.")
         self.stdout.write(f"Ya importados: {len(to_update)}.")
+        if replace_all:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Reemplazo total: se eliminarán {current_total} compromisos actuales "
+                    f"y se cargarán {len(rows)} desde el Excel."
+                )
+            )
         for label, row_numbers in warnings.items():
             if row_numbers:
                 self.stdout.write(
@@ -320,10 +348,18 @@ class Command(BaseCommand):
                 )
             )
             return
+        if replace_all and options["confirmar"] != "REEMPLAZAR":
+            raise CommandError(
+                "Para aplicar el reemplazo total agregue --confirmar REEMPLAZAR."
+            )
 
-        created = updated = skipped = 0
+        created = updated = skipped = removed = 0
         try:
             with transaction.atomic():
+                if replace_all:
+                    removed = Compromiso.all_objects.count()
+                    Compromiso.all_objects.all().delete()
+                    existing = {}
                 for item in rows:
                     commitment = existing.get(item.source_key)
                     if commitment and not options["actualizar_existentes"]:
@@ -345,6 +381,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Importación completa: {created} creados, {updated} actualizados y {skipped} omitidos."
+                f"Importación completa: {removed} eliminados, {created} creados, "
+                f"{updated} actualizados y {skipped} omitidos."
             )
         )

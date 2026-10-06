@@ -2,7 +2,8 @@ from datetime import datetime
 
 import pytest
 from django.core.management import call_command
-from openpyxl import Workbook
+from django.core.management.base import CommandError
+from openpyxl import Workbook, load_workbook
 
 from compromisos.models import Compromiso, EventoCompromiso
 
@@ -45,8 +46,8 @@ def test_import_is_dry_run_by_default_and_idempotent(tmp_path):
     call_command("importar_compromisos_excel", str(path), aplicar=True, verbosity=0)
     assert Compromiso.objects.count() == 2
     closed = Compromiso.objects.get(codigo_fuente="excel4dx:5:5.1")
-    assert closed.tema == "Proyecto 5"
-    assert closed.iniciativa == "Recibo PDF"
+    assert closed.proyecto == "Recibo PDF"
+    assert closed.iniciativa == ""
     assert closed.jefatura == "Jefatura de Soporte Oper Post Facturacion"
     assert closed.status == "T"
     assert closed.fecha_real.isoformat() == "2026-09-11"
@@ -61,3 +62,48 @@ def test_import_is_dry_run_by_default_and_idempotent(tmp_path):
     call_command("importar_compromisos_excel", str(path), aplicar=True, verbosity=0)
     assert Compromiso.objects.count() == 2
     assert EventoCompromiso.objects.filter(accion="IMPORTADO").count() == 2
+
+
+@pytest.mark.django_db
+def test_replace_all_validates_previews_and_requires_confirmation(tmp_path):
+    path = tmp_path / "compromisos.xlsx"
+    workbook(path)
+    call_command("importar_compromisos_excel", str(path), aplicar=True, verbosity=0)
+    assert Compromiso.objects.count() == 2
+
+    book = load_workbook(path)
+    book["Hoja1"].delete_rows(3)
+    book.save(path)
+
+    call_command(
+        "importar_compromisos_excel",
+        str(path),
+        reemplazar_todo=True,
+        verbosity=0,
+    )
+    assert Compromiso.objects.count() == 2
+
+    with pytest.raises(CommandError, match="--confirmar REEMPLAZAR"):
+        call_command(
+            "importar_compromisos_excel",
+            str(path),
+            aplicar=True,
+            reemplazar_todo=True,
+            verbosity=0,
+        )
+    assert Compromiso.objects.count() == 2
+
+    call_command(
+        "importar_compromisos_excel",
+        str(path),
+        aplicar=True,
+        reemplazar_todo=True,
+        confirmar="REEMPLAZAR",
+        verbosity=0,
+    )
+    assert list(Compromiso.objects.values_list("codigo_fuente", flat=True)) == [
+        "excel4dx:5:5.1"
+    ]
+    assert EventoCompromiso.objects.filter(
+        tipo="historial", accion="IMPORTADO"
+    ).count() == 1

@@ -58,7 +58,7 @@
       for (const item of options) {const option = document.createElement('option');option.value=item.codigo;option.textContent=item.nombre;input.append(option);}
     }
     input.value = cell.value ?? ''; input.setAttribute('aria-label', cell.label);
-    if (['tema','iniciativa','tarea','responsable_pyp','status'].includes(cell.name)) input.required=true;
+    if (['proyecto','tarea','responsable_pyp','status'].includes(cell.name)) input.required=true;
     form.append(input);
     let reason = null;
     if (['primera_fecha','segunda_fecha','tercera_fecha'].includes(cell.name)) {

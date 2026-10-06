@@ -4,13 +4,13 @@
   <div class="primary-filters">
     <label class="search">Buscar<input name="q" value="{{ f.q }}" placeholder="Buscar por proyecto, actividad o responsable…"></label>
     <label>Jefatura<select name="jefatura"><option value="">Todas</option>{% for value, label in jefaturas %}<option value="{{ value }}" {% if f.jefatura == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-    <label>Proyecto<select name="iniciativa"><option value="">Todos</option>{% for value in opciones.iniciativa %}<option {% if f.iniciativa == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
+    <label>Proyecto<select name="proyecto"><option value="">Todos</option>{% for value in opciones.proyecto %}<option {% if f.proyecto == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
     <label>Responsable<select name="responsable_pyp"><option value="">Todos</option>{% for value in opciones.responsable_pyp %}<option {% if f.responsable_pyp == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
   </div>
-  <details class="advanced-filters" {% if estatus_seleccionados or f.situacion or etapas_fecha or f.desde or f.hasta or f.tema or f.mes or f.anio or f.compromiso_hch or f.suspendida %}open{% endif %}>
+  <details class="advanced-filters" {% if estatus_seleccionados or f.situacion or etapas_fecha or f.desde or f.hasta or f.proyecto or f.mes or f.anio or f.suspendida %}open{% endif %}>
     <summary>Más filtros y registros por página</summary>
     <div class="filter-grid">
-      <label>Tema<select name="tema"><option value="">Todos</option>{% for value in opciones.tema %}<option {% if f.tema == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
+      <label>Iniciativa<select name="iniciativa"><option value="">Todas</option>{% for value in opciones.iniciativa %}{% if value %}<option {% if f.iniciativa == value %}selected{% endif %}>{{ value }}</option>{% endif %}{% endfor %}</select></label>
       <label>Mes<select name="mes"><option value="">Todos</option>{% for value in opciones.mes %}<option {% if f.mes == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
       <div class="date-stage-filter multi-select-filter">
         <span>Estatus</span>
@@ -24,7 +24,6 @@
       </div>
       <label>Situación<select name="situacion"><option value="">Todas</option>{% for s in situaciones %}<option {% if f.situacion == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label>
       <label>Año<input name="anio" type="number" min="1" max="9999" value="{{ f.anio }}" placeholder="2026"></label>
-      <label>Compromiso HCH<select name="compromiso_hch"><option value="">Todos</option><option value="true" {% if f.compromiso_hch == 'true' %}selected{% endif %}>Sí</option><option value="false" {% if f.compromiso_hch == 'false' %}selected{% endif %}>No</option></select></label>
       <label>Stand By<select name="suspendida"><option value="">Todos</option><option value="true" {% if f.suspendida == 'true' %}selected{% endif %}>Sí</option><option value="false" {% if f.suspendida == 'false' %}selected{% endif %}>No</option></select></label>
       {% if request.path == '/compromisos/' %}
       <div class="date-stage-filter multi-select-filter">

@@ -12,8 +12,7 @@ from .permissions import require
 from .services import audit
 
 COLUMNS = [
-    ("compromiso_hch", "HCH", "boolean"),
-    ("tema", "Tema", "text"),
+    ("proyecto", "Proyecto", "text"),
     ("iniciativa", "Iniciativa", "text"),
     ("tarea", "Tarea", "textarea"),
     ("status", "Estatus", "readonly"),

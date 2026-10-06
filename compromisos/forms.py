@@ -8,8 +8,7 @@ class CompromisoForm(forms.ModelForm):
     class Meta:
         model = Compromiso
         fields = [
-            "compromiso_hch",
-            "tema",
+            "proyecto",
             "iniciativa",
             "tarea",
             "responsable_pyp",

@@ -17,8 +17,7 @@ class Command(BaseCommand):
             tarea="Desarrollar de formatos PDD y SDR para proyectos internos",
             created_by="seed_demo",
             defaults=dict(
-                compromiso_hch=True,
-                tema="Proyectos",
+                proyecto="Proyectos",
                 iniciativa="Proyectos Internos",
                 status=settings.CLOSED_STATUS_CODE,
                 meta=95,
@@ -51,7 +50,7 @@ class Command(BaseCommand):
                 tarea=task,
                 created_by="seed_demo",
                 defaults=dict(
-                    tema=["Proyectos", "Operaciones"][index % 2],
+                    proyecto=["Proyectos", "Operaciones"][index % 2],
                     iniciativa=["Transformación digital", "Mejora continua"][index % 2],
                     responsable_pyp=["HP", "MR", "LC"][index % 3],
                     status=settings.PENDING_STATUS_CODE

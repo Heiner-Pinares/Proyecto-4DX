@@ -71,7 +71,7 @@ def filtrar(params, hoy=None):
         qs = qs.filter(condicion)
     if params.get("q"):
         q = Q()
-        for field in ["tema", "iniciativa", "tarea", "responsable_pyp", "notas"]:
+        for field in ["proyecto", "iniciativa", "tarea", "responsable_pyp", "notas"]:
             q |= Q(**{field + "__icontains": params["q"]})
         qs = qs.filter(q)
     statuses = (
@@ -85,7 +85,7 @@ def filtrar(params, hoy=None):
     if statuses:
         qs = qs.filter(estatus__in=statuses)
     for field in [
-        "tema",
+        "proyecto",
         "iniciativa",
         "responsable_pyp",
         "jefatura",
@@ -94,7 +94,7 @@ def filtrar(params, hoy=None):
     ]:
         if params.get(field):
             qs = qs.filter(**{"estatus" if field == "status" else field: params[field]})
-    for field in ["compromiso_hch", "suspendida"]:
+    for field in ["suspendida"]:
         if params.get(field) in ["true", "false"]:
             qs = qs.filter(**{field: params[field] == "true"})
     if params.get("anio", "").isdigit() and 1 <= int(params["anio"]) <= 9999:

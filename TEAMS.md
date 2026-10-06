@@ -13,7 +13,7 @@ No se necesita guardar tu usuario ni contraseña de Teams en el portal.
 
 ## Uso
 En Reportes aplica los filtros y actualiza la vista previa con la fecha de corte deseada. Pulsa **Enviar recordatorio a Teams · 4DX**. Editores y administradores pueden enviar; Consulta no puede.
-El mensaje contiene totales, hasta 10 compromisos (tema, iniciativa, tarea, responsable, objetivo y situación) y un enlace al reporte HTML completo. El enlace exige iniciar sesión en el portal y refleja los datos actuales: no es una copia inmutable. El servidor y su dirección pública deben estar disponibles para abrirlo.
+El mensaje contiene totales, hasta 10 compromisos (proyecto, iniciativa, tarea, responsable, objetivo y situación) y un enlace al reporte HTML completo. El enlace exige iniciar sesión en el portal y refleja los datos actuales: no es una copia inmutable. El servidor y su dirección pública deben estar disponibles para abrirlo.
 El HTML del correo no se inserta literalmente en Teams; se adapta a una tarjeta de recordatorio.
 El botón envía una vez por clic. No hay programación recurrente ni envío al abrir la página.
 La respuesta “aceptado” significa que el flujo recibió la solicitud, no que Teams haya confirmado la publicación. Revisa la primera publicación en el chat y el historial de ejecuciones en Workflows. Si hay un timeout, revisa ambos antes de volver a enviar: no hay reintentos automáticos.

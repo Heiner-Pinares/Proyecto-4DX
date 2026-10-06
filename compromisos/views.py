@@ -24,7 +24,7 @@ def filtros(request):
         field: Compromiso.objects.order_by(field)
         .values_list(field, flat=True)
         .distinct()
-        for field in ["tema", "iniciativa", "responsable_pyp", "mes"]
+        for field in ["proyecto", "iniciativa", "responsable_pyp", "mes"]
     }
     return {
         "opciones": choices,
@@ -72,7 +72,7 @@ def listado(request):
 
     qs = filtrar(request.GET)
     sort = request.GET.get("orden", "-created_at")
-    sortable = {"jefatura", "responsable_pyp", "iniciativa", "tarea", "fecha_de_compromiso", "primera_fecha", "segunda_fecha", "tercera_fecha", "created_at", "puntaje", "estatus"}
+    sortable = {"jefatura", "proyecto", "responsable_pyp", "iniciativa", "tarea", "fecha_de_compromiso", "primera_fecha", "segunda_fecha", "tercera_fecha", "created_at", "puntaje", "estatus"}
     if sort.lstrip("-") not in sortable:
         sort = "-created_at"
     qs = qs.order_by(sort, "id")
@@ -297,8 +297,10 @@ def indicadores(request):
             "values": [r["cumplimiento"] for r in responsables],
         },
     ]
-    for field, title in [("tema", "tema"), ("iniciativa", "iniciativa")]:
-        rows = agrupados(qs, field)
+    for field, title in [("proyecto", "proyecto"), ("iniciativa", "iniciativa")]:
+        rows = agrupados(qs.exclude(**{field: ""}), field)
+        if not rows:
+            continue
         charts.append(
             {
                 "title": f"Cumplimiento de fechas por {title}",

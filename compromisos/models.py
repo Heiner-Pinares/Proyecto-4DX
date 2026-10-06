@@ -36,9 +36,10 @@ class Compromiso(models.Model):
         unique=True,
         editable=False,
     )
-    compromiso_hch = models.BooleanField("Compromisos de HCH", default=False)
-    tema = models.CharField("Tema", max_length=150, db_index=True)
-    iniciativa = models.CharField("Iniciativa", max_length=250, db_index=True)
+    proyecto = models.CharField("Proyecto", max_length=250, db_index=True)
+    iniciativa = models.CharField(
+        "Iniciativa", max_length=250, blank=True, default="", db_index=True
+    )
     tarea = models.TextField("Tarea")
     status = models.CharField("Estatus", max_length=30, db_index=True, choices=[("EC", "En curso"), ("S", "Stand By"), ("T", "Terminado"), ("D", "Demorado")])
     meta = models.DecimalField(

@@ -57,7 +57,8 @@ def tarjeta(contexto, query, public_url):
     # Campos acotados: la tarjeta es un recordatorio; el enlace contiene el reporte completo.
     for row in contexto['rows'][:10]:
         objetivo = row.objetivo.strftime('%d/%m/%Y') if row.objetivo else 'Por definir'
-        body.append(block(f"#{row.pk} · {row.tema[:80]} / {row.iniciativa[:80]}\n{row.tarea[:350]}\nResponsable: {row.responsable_pyp[:100]} · Objetivo: {objetivo} · {row.situacion}", separator=True))
+        referencia = row.proyecto[:80] + (f" / {row.iniciativa[:80]}" if row.iniciativa else "")
+        body.append(block(f"#{row.pk} · {referencia}\n{row.tarea[:350]}\nResponsable: {row.responsable_pyp[:100]} · Objetivo: {objetivo} · {row.situacion}", separator=True))
     body.append(block(f"Se muestran {min(summary['total'], 10)} de {summary['total']} pendientes. Datos actuales y filtros del reporte; no reconstruye estados históricos.", size='Small'))
     url = public_url.rstrip('/') + reverse('correo_reporte') + '?' + query
     card = {'type':'AdaptiveCard', 'version':'1.2', '$schema':'http://adaptivecards.io/schemas/adaptive-card.json',

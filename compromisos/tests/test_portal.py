@@ -33,7 +33,7 @@ def users():
 @pytest.fixture
 def data():
     return dict(
-        tema="Proyectos",
+        proyecto="Proyectos",
         iniciativa="Proyectos Internos",
         tarea="Preparar formatos",
         responsable_pyp="HP",
@@ -188,13 +188,12 @@ def test_bad_close_atomic(c, users):
     "params",
     [
         {"q": "formatos"},
-        {"tema": "Proyectos"},
+        {"proyecto": "Proyectos"},
         {"iniciativa": "Proyectos Internos"},
         {"responsable_pyp": "HP"},
         {"status": "EC"},
         {"mes": "Septiembre 2026"},
         {"anio": "2026"},
-        {"compromiso_hch": "false"},
         {"suspendida": "false"},
         {"desde": "2026-09-10", "hasta": "2026-09-10"},
         {"situacion": "Por vencer"},
@@ -210,7 +209,7 @@ def test_permissions(c, users, client):
         with pytest.raises(PermissionDenied):
             operar(c.pk, "eliminar", {}, users[role])
     with pytest.raises(PermissionDenied):
-        guardar({"tema": "No"}, users["Consulta"], c.pk)
+        guardar({"proyecto": "No"}, users["Consulta"], c.pk)
     client.force_login(users["Consulta"])
     for url in [
         "/compromisos/nuevo/",
@@ -309,17 +308,17 @@ def test_pagination(c, users, client, data):
     for i in range(13):
         guardar({**data, "tarea": f"Tarea {i}"}, users["Editor"])
     client.force_login(users["Consulta"])
-    response = client.get("/compromisos/?size=10&tema=Proyectos&page=2")
+    response = client.get("/compromisos/?size=10&proyecto=Proyectos&page=2")
     assert len(response.context["page_obj"]) == 4
-    assert "tema=Proyectos" in response.context["query"]
+    assert "proyecto=Proyectos" in response.context["query"]
 
 
 def test_exports(c):
     c.tarea = '=HYPERLINK("bad")'
     c.save()
     book = load_workbook(BytesIO(excel(base())))
-    assert book.active.max_column == 17
-    assert book.active["D2"].data_type == "s"
+    assert book.active.max_column == 16
+    assert book.active["C2"].data_type == "s"
     doc = Document(BytesIO(word(base(), date(2026, 9, 7))))
     text = "\n".join(p.text for p in doc.paragraphs)
     assert "07/09/2026" in text and "Proyectos Internos" in text

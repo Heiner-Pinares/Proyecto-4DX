@@ -9,8 +9,8 @@ from django.contrib.auth.admin import UserAdmin, GroupAdmin
 
 @admin.register(Compromiso)
 class CompromisoAdmin(RegistroAdminMixin, admin.ModelAdmin):
-    list_display = ["id", "tema", "iniciativa", "responsable_pyp", "status", "mes"]
-    search_fields = ["tarea", "tema", "responsable_pyp"]
+    list_display = ["id", "proyecto", "iniciativa", "responsable_pyp", "status", "mes"]
+    search_fields = ["tarea", "proyecto", "responsable_pyp"]
     readonly_fields = [
         "puntaje",
         "status",

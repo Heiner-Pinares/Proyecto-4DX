@@ -27,7 +27,7 @@ def editor():
 @pytest.fixture
 def c():
     return Compromiso.objects.create(
-        tema="Proyectos",
+        proyecto="Proyectos",
         iniciativa="Portal",
         tarea="Prueba de edición",
         responsable_pyp="HP",
@@ -65,7 +65,7 @@ def test_score_rules(c, real, second, third, expected):
     assert c.puntaje == expected
     assert calcular_puntaje(c) == expected
     assert base().get(pk=c.pk).cumplimiento_fechas == expected
-    assert load_workbook(BytesIO(excel(base()))).active["L2"].value == expected
+    assert load_workbook(BytesIO(excel(base()))).active["K2"].value == expected
 
 
 def test_initial_date_and_no_target(c):
@@ -108,7 +108,7 @@ def test_save_recalculate_conflict(c, editor, client):
 @pytest.mark.parametrize(
     "field,value",
     [
-        ("tema", ""),
+        ("proyecto", ""),
         ("meta", -1),
         ("status", "FALSO"),
         ("puntaje", 100),
@@ -158,10 +158,10 @@ def test_average_excludes_open_and_suspended(c):
     c.fecha_real = date(2026, 9, 11)
     c.save()
     Compromiso.objects.create(
-        tema="A", iniciativa="B", tarea="Sin cerrar", responsable_pyp="HP", status="EC"
+        proyecto="A", iniciativa="B", tarea="Sin cerrar", responsable_pyp="HP", status="EC"
     )
     Compromiso.objects.create(
-        tema="A",
+        proyecto="A",
         iniciativa="B",
         tarea="Suspendido",
         responsable_pyp="HP",
@@ -241,4 +241,4 @@ def test_status_advances_without_editing(c):
     assert before.estatus == 'EC' and after.estatus == 'D'
     assert filtrar({'status':'D'}, date(2026,9,11)).filter(pk=c.pk).exists()
     assert next(cell for cell in fila(after)['cells'] if cell['name']=='status')['value'] == 'D'
-    assert load_workbook(BytesIO(excel(base(date(2026,9,11))))).active['E2'].value == 'D'
+    assert load_workbook(BytesIO(excel(base(date(2026,9,11))))).active['D2'].value == 'D'

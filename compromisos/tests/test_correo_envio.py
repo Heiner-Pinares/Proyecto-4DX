@@ -34,7 +34,7 @@ def test_followup_button_sends_its_own_dynamic_html(client, settings):
     settings.CORREO_SSH_HOST='internal';settings.CORREO_SSH_USER='user';settings.CORREO_SSH_PASSWORD='secret'
     user=User.objects.create_superuser('seguimiento_test', password='test');client.force_login(user)
     Compromiso.objects.create(
-        jefatura='Jefatura de Facturacion a Clientes', tema='Proyecto 4DX', iniciativa='Portal',
+        jefatura='Jefatura de Facturacion a Clientes', proyecto='Proyecto 4DX', iniciativa='Portal',
         tarea='Validar el nuevo correo', responsable_pyp='Ana', status='EC',
         fecha_de_compromiso=date(2026, 9, 1), fecha_de_vencimiento=date(2026, 9, 28),
     )
