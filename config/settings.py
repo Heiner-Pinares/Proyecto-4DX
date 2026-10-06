@@ -96,14 +96,22 @@ _teams_config = dotenv_values(BASE_DIR / ".env")
 TEAMS_WEBHOOK_URL = (_teams_config.get("TEAMS_WEBHOOK_URL") or os.getenv("TEAMS_WEBHOOK_URL", "")).strip()
 PORTAL_PUBLIC_URL = (os.getenv("PORTAL_PUBLIC_URL") or _teams_config.get("PORTAL_PUBLIC_URL", "")).strip().rstrip("/")
 
-# Conexión del relay corporativo usada por el botón de correo. Los valores del
-# entorno siguen teniendo prioridad, pero los campos vacíos de .env no anulan
-# la configuración funcional incluida para el servidor 4DX.
+# Conexión del relay corporativo usada por el botón de correo.
 CORREO_SSH_HOST = os.getenv("CORREO_SSH_HOST") or "172.19.30.62"
 CORREO_SSH_USER = os.getenv("CORREO_SSH_USER") or "usr_mds"
 CORREO_SSH_PASSWORD = os.getenv("CORREO_SSH_PASSWORD") or "Usr_mds"
-CORREO_PARA = os.getenv("CORREO_PARA") or "c27826@claro.com.pe"
-CORREO_COPIA = os.getenv("CORREO_COPIA") or "c28171@claro.com.pe"
+# Los destinatarios deben quedar visibles en el .env del servidor. Si la clave
+# existe allí, incluso vacía, prevalece sobre una variable heredada de Windows.
+CORREO_PARA = ((
+    _teams_config.get("CORREO_PARA")
+    if "CORREO_PARA" in _teams_config
+    else os.getenv("CORREO_PARA", "")
+) or "").strip()
+CORREO_COPIA = ((
+    _teams_config.get("CORREO_COPIA")
+    if "CORREO_COPIA" in _teams_config
+    else os.getenv("CORREO_COPIA", "")
+) or "").strip()
 
 SESSION_ENGINE = "compromisos.session_backend"
 MIGRATION_MODULES = {"admin": "config.admin_migrations", "sessions": "config.sessions_migrations"}

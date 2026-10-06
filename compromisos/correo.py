@@ -28,8 +28,6 @@ from .permissions import require
 from .reports import correo_contexto, resumen_jefaturas
 from .selectors import filtrar
 
-PARA = 'c27826@claro.com.pe'
-COPIA = 'c28171@claro.com.pe'
 SALT = '4dx-correo-semanal'
 
 
@@ -55,8 +53,8 @@ def _lista_correos(valor, nombre, requerido=False):
 def destinatarios():
     """Destinatarios definidos por el servidor, nunca por el navegador."""
     return (
-        _lista_correos(getattr(settings, 'CORREO_PARA', PARA), 'CORREO_PARA', True),
-        _lista_correos(getattr(settings, 'CORREO_COPIA', COPIA), 'CORREO_COPIA'),
+        _lista_correos(getattr(settings, 'CORREO_PARA', ''), 'CORREO_PARA', True),
+        _lista_correos(getattr(settings, 'CORREO_COPIA', ''), 'CORREO_COPIA'),
     )
 
 

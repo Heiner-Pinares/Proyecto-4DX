@@ -9,7 +9,7 @@ CORREO_PARA=c27826@claro.com.pe,otro.usuario@claro.com.pe
 CORREO_COPIA=c28171@claro.com.pe,otra.copia@claro.com.pe
 ```
 
-`CORREO_PARA` requiere al menos una dirección. `CORREO_COPIA` puede quedar vacío. El portal valida las direcciones al generar el correo; no acepta destinatarios enviados desde el navegador.
+`CORREO_PARA` requiere al menos una dirección. `CORREO_COPIA` puede quedar vacío. No existen destinatarios alternativos dentro del código: si falta `CORREO_PARA`, el envío se detiene con un mensaje de configuración. El portal valida las direcciones al generar el correo; no acepta destinatarios enviados desde el navegador.
 
 - Remitente: 4DX Facturación <4dx@claro.com.pe>
 

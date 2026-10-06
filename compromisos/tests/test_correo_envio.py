@@ -2,10 +2,17 @@ from datetime import date
 from unittest.mock import patch, MagicMock
 import pytest
 from django.contrib.auth.models import User
+from django.core.exceptions import ImproperlyConfigured
 from django.test import Client
-from compromisos.correo import token_correo, construir_mensaje, enviar_remoto, PARA, COPIA
+from compromisos.correo import token_correo, construir_mensaje, enviar_remoto
 from compromisos.models import Compromiso, EventoCompromiso
 pytestmark=pytest.mark.django_db
+
+
+@pytest.fixture(autouse=True)
+def configured_recipients(settings):
+    settings.CORREO_PARA='c27826@claro.com.pe'
+    settings.CORREO_COPIA='c28171@claro.com.pe'
 
 
 def test_recipients_html_and_duplicate(client,settings):
@@ -16,7 +23,7 @@ def test_recipients_html_and_duplicate(client,settings):
         result=client.post('/reportes/correo/enviar/?'+query,{'token':token,'to':'other@example.com','cc':'other@example.com'})
         assert result.status_code==302
         msg=send.call_args.args[0]
-        assert msg['To']==PARA and msg['Cc']==COPIA and msg['Bcc'] is None
+        assert msg['To']==settings.CORREO_PARA and msg['Cc']==settings.CORREO_COPIA and msg['Bcc'] is None
         html=msg.get_body(preferencelist=('html',)).get_content()
         assert 'Estado general de cumplimiento' in html and '29/09/2026' in html
         client.post('/reportes/correo/enviar/?'+query,{'token':token})
@@ -46,7 +53,7 @@ def test_followup_button_sends_its_own_dynamic_html(client, settings):
         response=client.post('/reportes/correo/seguimiento/enviar/?'+query, {'token':token})
         assert response.status_code == 302
         msg=send.call_args.args[0]
-        assert msg['To']==PARA and msg['Cc']==COPIA
+        assert msg['To']==settings.CORREO_PARA and msg['Cc']==settings.CORREO_COPIA
         assert msg['Subject']=='Seguimiento de compromisos 4DX · Corte 29/09/2026'
         html=msg.get_body(preferencelist=('html',)).get_content()
         assert 'Recordatorio de compromisos' in html
@@ -72,3 +79,12 @@ def test_sendmail_configured_envelope_and_failure(settings,tmp_path):
             enviar_remoto(construir_mensaje('<p>Prueba</p>',date(2026,9,29)))
         assert ssh.exec_command.call_args.args[0]=='sendmail -i c27826@claro.com.pe supervisor@claro.com.pe c28171@claro.com.pe'
         ssh.close.assert_called_once()
+
+
+def test_missing_or_malformed_recipients_are_rejected(settings):
+    settings.CORREO_PARA=''
+    with pytest.raises(ImproperlyConfigured, match='CORREO_PARA'):
+        construir_mensaje('<p>Prueba</p>',date(2026,9,29))
+    settings.CORREO_PARA='usuario@claro.com.pe\\'
+    with pytest.raises(ImproperlyConfigured, match='CORREO_PARA'):
+        construir_mensaje('<p>Prueba</p>',date(2026,9,29))
