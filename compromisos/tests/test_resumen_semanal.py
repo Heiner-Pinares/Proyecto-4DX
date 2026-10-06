@@ -12,7 +12,7 @@ pytestmark = pytest.mark.django_db
 def test_week_and_scores(client):
     corte=date(2026,9,29)
     def add(**extra):
-        data=dict(proyecto='Proyecto', iniciativa='I', tarea='Tarea real', responsable_pyp='Ana', primera_fecha=corte, jefatura=Compromiso.JEFATURAS[0][0])
+        data=dict(proyecto='Proyecto', tarea='Tarea real', responsable_pyp='Ana', primera_fecha=corte, jefatura=Compromiso.JEFATURAS[0][0])
         data.update(extra)
         return Compromiso.objects.create(**data)
     add()
@@ -46,15 +46,15 @@ def test_week_and_scores(client):
 def test_multiple_status_filter_is_preserved(client):
     corte = date(2026, 10, 4)
     Compromiso.objects.create(
-        proyecto='A', iniciativa='A', tarea='Terminada', responsable_pyp='Ana',
+        proyecto='A', tarea='Terminada', responsable_pyp='Ana',
         primera_fecha=corte, fecha_real=corte,
     )
     Compromiso.objects.create(
-        proyecto='B', iniciativa='B', tarea='Suspendida', responsable_pyp='Ana',
+        proyecto='B', tarea='Suspendida', responsable_pyp='Ana',
         primera_fecha=corte, suspendida=True,
     )
     Compromiso.objects.create(
-        proyecto='C', iniciativa='C', tarea='En curso', responsable_pyp='Ana',
+        proyecto='C', tarea='En curso', responsable_pyp='Ana',
         primera_fecha=date(2026, 10, 10),
     )
     params = QueryDict('status=T&status=S')

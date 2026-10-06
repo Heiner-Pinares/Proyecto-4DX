@@ -10,7 +10,6 @@
   <details class="advanced-filters" {% if estatus_seleccionados or f.situacion or etapas_fecha or f.desde or f.hasta or f.proyecto or f.mes or f.anio or f.suspendida %}open{% endif %}>
     <summary>Más filtros y registros por página</summary>
     <div class="filter-grid">
-      <label>Iniciativa<select name="iniciativa"><option value="">Todas</option>{% for value in opciones.iniciativa %}{% if value %}<option {% if f.iniciativa == value %}selected{% endif %}>{{ value }}</option>{% endif %}{% endfor %}</select></label>
       <label>Mes<select name="mes"><option value="">Todos</option>{% for value in opciones.mes %}<option {% if f.mes == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
       <div class="date-stage-filter multi-select-filter">
         <span>Estatus</span>

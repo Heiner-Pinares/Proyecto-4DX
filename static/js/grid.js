@@ -11,16 +11,28 @@
     rows.set(String(row.id), row); tr.dataset.version = row.version;
     for (const cell of row.cells) {
       const td = tr.querySelector(`[data-field="${cell.name}"]`);
-      td.querySelector('.cell-value, .cell-display').textContent = cell.display;
+      const display = td.querySelector('.cell-value, .cell-display');
+      if (display) display.textContent = cell.display;
       if (cell.name === 'status') td.dataset.status = cell.value || '';
       if (cell.name === 'puntaje') td.dataset.score = cell.value || '';
     }
   }
+  function closeEditor(editor, focus = true) {
+    if (editor.modal) {
+      if (editor.modal.open) editor.modal.close();
+      editor.modal.remove();
+    } else {
+      editor.form.remove();
+      editor.button.hidden = false;
+      editor.td.classList.remove('editing');
+    }
+    editor.td.classList.remove('saving');
+    if (focus && editor.button.isConnected) editor.button.focus();
+  }
   function cancel() {
     if (!active || busy) return;
     const old = active; active = null;
-    old.form.remove(); old.button.hidden = false; old.td.classList.remove('editing');
-    old.button.focus(); say('Sin cambios pendientes');
+    closeEditor(old); say('Sin cambios pendientes');
   }
   async function save(next = null) {
     if (!active || busy) return;
@@ -35,7 +47,7 @@
       if (response.redirected) throw new Error('Tu sesión venció. Abre el portal de nuevo e inicia sesión; el cambio no se guardó.');
       const data = await response.json().catch(() => ({error:'No fue posible guardar. Comprueba tu sesión e inténtalo otra vez.'}));
       if (!response.ok) throw new Error(data.error || 'No se pudo guardar el cambio.');
-      current.form.remove(); current.button.hidden = false; current.td.classList.remove('editing'); active = null;
+      active = null; closeEditor(current, false);
       redraw(current.tr, data.row); say('✓ Cambio guardado'); current.button.focus();
       busy = false; if (next) open(next);
     } catch (error) {
@@ -44,11 +56,35 @@
       current.input.focus();
     } finally { busy = false; current.td.classList.remove('saving'); }
   }
+  function openComments(button, td, tr, cell) {
+    const readonly = button.dataset.readonly === 'true';
+    const modal = document.createElement('dialog'); modal.className = 'comment-dialog';
+    const form = document.createElement('form'); form.className = 'comment-dialog-form';
+    const heading = document.createElement('div'); heading.className = 'comment-dialog-heading';
+    const title = document.createElement('h2'); title.textContent = readonly ? 'Comentarios' : 'Ver o editar comentarios';
+    const subtitle = document.createElement('p'); subtitle.textContent = `Compromiso N.º ${tr.dataset.id}`;
+    heading.append(title, subtitle);
+    const input = document.createElement('textarea');
+    input.value = cell.value || ''; input.placeholder = 'Escribe aquí los comentarios del compromiso';
+    input.setAttribute('aria-label', 'Comentarios del compromiso'); input.readOnly = readonly;
+    const actions = document.createElement('div'); actions.className = 'comment-dialog-actions';
+    if (!readonly) {
+      const accept = document.createElement('button'); accept.type = 'submit'; accept.className = 'button'; accept.textContent = 'Guardar comentario'; actions.append(accept);
+    }
+    const dismiss = document.createElement('button'); dismiss.type = 'button'; dismiss.className = 'button secondary'; dismiss.textContent = 'Cerrar'; dismiss.addEventListener('click', cancel); actions.append(dismiss);
+    form.append(heading, input, actions); modal.append(form); document.body.append(modal);
+    active = {button, td, tr, cell, kind:cell.kind, form, input, reason:null, modal, readonly};
+    form.addEventListener('submit', event => {event.preventDefault(); if (!readonly) save();});
+    modal.addEventListener('cancel', event => {event.preventDefault(); cancel();});
+    modal.showModal(); input.focus(); if (!readonly) input.setSelectionRange(input.value.length, input.value.length);
+    say(readonly ? 'Consultando comentarios' : 'Editando comentarios');
+  }
   function open(button) {
     if (busy || (active && active.button === button)) return;
-    if (active) { save(button); return; }
+    if (active) { if (active.readonly) { cancel(); open(button); } else save(button); return; }
     const td = button.closest('td'), tr = button.closest('tr');
     const cell = rows.get(tr.dataset.id).cells.find(cell => cell.name === td.dataset.field);
+    if (cell.kind === 'comments') { openComments(button, td, tr, cell); return; }
     const form = document.createElement('form'); form.className = 'cell-editor';
     const input = document.createElement(cell.kind === 'textarea' ? 'textarea' : ['select','boolean'].includes(cell.kind) ? 'select' : 'input');
     if (input.tagName === 'INPUT') { input.type = cell.kind === 'number' ? 'number' : cell.kind === 'date' ? 'date' : 'text'; if (cell.kind === 'number') {input.min='0';input.step='0.01';} }

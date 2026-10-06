@@ -8,6 +8,7 @@ from django.test import Client
 from openpyxl import load_workbook
 
 from compromisos.indicators import metricas
+from compromisos.grid import COLUMNS
 from compromisos.models import Compromiso
 from compromisos.reports import excel
 from compromisos.scoring import calcular_puntaje
@@ -28,7 +29,6 @@ def editor():
 def c():
     return Compromiso.objects.create(
         proyecto="Proyectos",
-        iniciativa="Portal",
         tarea="Prueba de edición",
         responsable_pyp="HP",
         status="EC",
@@ -65,7 +65,7 @@ def test_score_rules(c, real, second, third, expected):
     assert c.puntaje == expected
     assert calcular_puntaje(c) == expected
     assert base().get(pk=c.pk).cumplimiento_fechas == expected
-    assert load_workbook(BytesIO(excel(base()))).active["K2"].value == expected
+    assert load_workbook(BytesIO(excel(base()))).active["J2"].value == expected
 
 
 def test_initial_date_and_no_target(c):
@@ -154,15 +154,38 @@ def test_automatic_month_and_readonly_score(c, editor, client):
     )
 
 
+def test_comments_are_last_and_use_compact_editor(c, editor, client):
+    client.force_login(editor)
+    assert COLUMNS[-1] == ("notas", "Comentarios", "comments")
+    assert "iniciativa" not in [field.name for field in Compromiso._meta.fields]
+
+    page = client.get("/compromisos/")
+    html = page.content.decode()
+    assert 'class="cell-value comment-button"' in html
+    assert "Agregar comentario" in html
+    assert "comments-20261006" in html
+    assert html.index('data-column="notas"') > html.index("<th>Detalle</th>")
+
+    comment = "Comentario extenso que se edita fuera de la celda.\nSegunda línea."
+    response = post(client, c, "notas", comment)
+    assert response.status_code == 200
+    cell = response.json()["row"]["cells"][-1]
+    assert cell["name"] == "notas"
+    assert cell["kind"] == "comments"
+    assert cell["display"] == "Ver comentario"
+    assert cell["has_value"] is True
+    c.refresh_from_db()
+    assert c.notas == comment
+
+
 def test_average_excludes_open_and_suspended(c):
     c.fecha_real = date(2026, 9, 11)
     c.save()
     Compromiso.objects.create(
-        proyecto="A", iniciativa="B", tarea="Sin cerrar", responsable_pyp="HP", status="EC"
+        proyecto="A", tarea="Sin cerrar", responsable_pyp="HP", status="EC"
     )
     Compromiso.objects.create(
         proyecto="A",
-        iniciativa="B",
         tarea="Suspendido",
         responsable_pyp="HP",
         status="T",
@@ -241,4 +264,4 @@ def test_status_advances_without_editing(c):
     assert before.estatus == 'EC' and after.estatus == 'D'
     assert filtrar({'status':'D'}, date(2026,9,11)).filter(pk=c.pk).exists()
     assert next(cell for cell in fila(after)['cells'] if cell['name']=='status')['value'] == 'D'
-    assert load_workbook(BytesIO(excel(base(date(2026,9,11))))).active['D2'].value == 'D'
+    assert load_workbook(BytesIO(excel(base(date(2026,9,11))))).active['C2'].value == 'D'

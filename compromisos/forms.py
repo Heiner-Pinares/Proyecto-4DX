@@ -9,7 +9,6 @@ class CompromisoForm(forms.ModelForm):
         model = Compromiso
         fields = [
             "proyecto",
-            "iniciativa",
             "tarea",
             "responsable_pyp",
             "jefatura",

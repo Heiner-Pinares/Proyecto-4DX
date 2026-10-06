@@ -37,9 +37,6 @@ class Compromiso(models.Model):
         editable=False,
     )
     proyecto = models.CharField("Proyecto", max_length=250, db_index=True)
-    iniciativa = models.CharField(
-        "Iniciativa", max_length=250, blank=True, default="", db_index=True
-    )
     tarea = models.TextField("Tarea")
     status = models.CharField("Estatus", max_length=30, db_index=True, choices=[("EC", "En curso"), ("S", "Stand By"), ("T", "Terminado"), ("D", "Demorado")])
     meta = models.DecimalField(
@@ -76,7 +73,7 @@ class Compromiso(models.Model):
     primera_fecha = models.DateField(null=True, blank=True)
     segunda_fecha = models.DateField(null=True, blank=True)
     tercera_fecha = models.DateField(null=True, blank=True)
-    notas = models.TextField("Notas", blank=True)
+    notas = models.TextField("Comentarios", blank=True)
     suspendida = models.BooleanField("Stand By", default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

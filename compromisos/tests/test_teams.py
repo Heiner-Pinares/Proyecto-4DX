@@ -18,7 +18,7 @@ def setup(client, settings):
     settings.PORTAL_PUBLIC_URL = 'https://portal.example.com'
     user = User.objects.create_superuser('teams_admin', password='test')
     client.force_login(user)
-    Compromiso.objects.create(proyecto='Proyecto', iniciativa='Iniciativa', tarea='Pendiente', responsable_pyp='Ana', primera_fecha=date(2026,9,1))
+    Compromiso.objects.create(proyecto='Proyecto', tarea='Pendiente', responsable_pyp='Ana', primera_fecha=date(2026,9,1))
     query='corte=2026-09-24'
     return user, query
 

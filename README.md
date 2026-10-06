@@ -110,7 +110,7 @@ Los controles validan en servidor y muestran errores sin descartar el texto escr
 
 Si 1ERA FECHA está vacía, se usa el vencimiento original. Si no hay ninguna fecha objetivo pero sí fecha real, se asigna 60 %. Siempre prevalece la primera fecha que se cumplió: tener segunda o tercera fecha registrada no reduce un cierre que ocurrió a tiempo en la primera. Un cierre tarde sin segunda fecha recibe 60 %.
 
-La tarjeta principal y los gráficos por responsable, proyecto, iniciativa y mes promedian este puntaje sobre los registros con fecha real, excluyendo suspendidos. Excel y Word incluyen el mismo puntaje. El indicador separado **cumplimiento de meta** conserva la fórmula puntaje/meta; no debe confundirse con el cumplimiento por fechas 100/80/60.
+La tarjeta principal y los gráficos por responsable, proyecto y mes promedian este puntaje sobre los registros con fecha real, excluyendo suspendidos. Excel y Word incluyen el mismo puntaje. El indicador separado **cumplimiento de meta** conserva la fórmula puntaje/meta; no debe confundirse con el cumplimiento por fechas 100/80/60.
 
 La migración `0002_cumplimiento_fechas` recalcula los datos existentes y deja auditoría de los puntajes que cambian. No se reemplazan las fechas existentes.
 
@@ -152,9 +152,9 @@ Los ocho gráficos usan SVG y JavaScript locales, con datos alternativos accesib
 
 ## Reportes y exportaciones
 
-`/reportes/` produce DOCX agrupado por proyecto e iniciativa, con vencimiento original, fecha vigente, cierre, reprogramaciones, motivos y notas. La fecha de corte **evalúa la situación de los datos actuales**; no reconstruye estados pasados. La auditoría textual por sí sola no constituye un sistema completo de snapshots históricos.
+`/reportes/` produce DOCX agrupado por proyecto, con vencimiento original, fecha vigente, cierre, reprogramaciones, motivos y notas. La fecha de corte **evalúa la situación de los datos actuales**; no reconstruye estados pasados. La auditoría textual por sí sola no constituye un sistema completo de snapshots históricos.
 
-Excel conserva las 16 columnas operativas y las fechas como fechas nativas. Los textos se guardan como cadenas, evitando la ejecución de fórmulas introducidas en tareas o notas. Ambos formatos excluyen eliminados y respetan filtros. Los archivos se generan en memoria con nombres controlados.
+Excel conserva las 15 columnas operativas y las fechas como fechas nativas. Los textos se guardan como cadenas, evitando la ejecución de fórmulas introducidas en tareas o notas. Ambos formatos excluyen eliminados y respetan filtros. Los archivos se generan en memoria con nombres controlados.
 
 ## Importar compromisos desde la matriz 4DX
 
@@ -186,7 +186,7 @@ Después de revisar el resultado, aplique el reemplazo con confirmación explíc
 
 El archivo completo se valida antes de eliminar y el borrado más la nueva carga se ejecutan en una única transacción. Si una fila falla, la base conserva todos los compromisos anteriores. El reemplazo elimina también el historial y las reprogramaciones vinculadas a los compromisos sustituidos, pero mantiene usuarios, roles, estados y configuración del portal.
 
-La importación mapea la columna Proyecto del Excel directamente a Proyecto en el portal, Actividad a Tarea y las tres fechas del Excel a primera/segunda/tercera fecha. La iniciativa queda vacía cuando la matriz no incluye una columna propia para ese dato. Para una actividad cerrada, el archivo no ofrece una fecha real separada; se usa la última fecha comprometida como fecha real y se deja constancia en Notas. Los responsables vacíos quedan como `Por asignar` y las jefaturas vacías permanecen sin asignar.
+La importación mapea la columna Proyecto del Excel directamente a Proyecto en el portal, Actividad a Tarea y las tres fechas del Excel a primera/segunda/tercera fecha. Para una actividad cerrada, el archivo no ofrece una fecha real separada; se usa la última fecha comprometida como fecha real y se deja constancia en Notas. Los responsables vacíos quedan como `Por asignar` y las jefaturas vacías permanecen sin asignar.
 
 Los Excel operativos no se versionan. Copia el archivo a `importaciones` directamente en el servidor (carpeta compartida, RDP o SCP) y conserva en Git solamente el importador.
 
@@ -307,7 +307,7 @@ Después de actualizar estáticos, ejecuta `python manage.py collectstatic --noi
 
 
 ### Vista HTML del correo de seguimiento
-En Reportes, el apartado Correo de seguimiento permite elegir el corte, ver el correo, abrirlo en otra pestaña y descargar HTML con estilos incluidos. Respeta los filtros del reporte. Incluye compromisos actualmente abiertos (sin fecha real ni estado cerrado), no suspendidos ni eliminados, cuya fecha de compromiso sea anterior o igual al corte, o esté sin definir. No limita los objetivos futuros: muestra todo el trabajo pendiente iniciado hasta el corte. Evalúa los plazos con las fechas vigentes; no reconstruye estados históricos. Agrupa por proyecto e iniciativa y resume vencidos, próximos a vencer, en plazo y sin fecha objetivo. No envía correos.
+En Reportes, el apartado Correo de seguimiento permite elegir el corte, ver el correo, abrirlo en otra pestaña y descargar HTML con estilos incluidos. Respeta los filtros del reporte. Incluye compromisos actualmente abiertos (sin fecha real ni estado cerrado), no suspendidos ni eliminados, cuya fecha de compromiso sea anterior o igual al corte, o esté sin definir. No limita los objetivos futuros: muestra todo el trabajo pendiente iniciado hasta el corte. Evalúa los plazos con las fechas vigentes; no reconstruye estados históricos. Agrupa por proyecto y resume vencidos, próximos a vencer, en plazo y sin fecha objetivo. No envía correos.
 
 
 ### Estatus y vencimiento automático

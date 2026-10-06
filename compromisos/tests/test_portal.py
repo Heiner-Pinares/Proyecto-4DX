@@ -34,7 +34,6 @@ def users():
 def data():
     return dict(
         proyecto="Proyectos",
-        iniciativa="Proyectos Internos",
         tarea="Preparar formatos",
         responsable_pyp="HP",
         status="EC",
@@ -189,7 +188,6 @@ def test_bad_close_atomic(c, users):
     [
         {"q": "formatos"},
         {"proyecto": "Proyectos"},
-        {"iniciativa": "Proyectos Internos"},
         {"responsable_pyp": "HP"},
         {"status": "EC"},
         {"mes": "Septiembre 2026"},
@@ -317,11 +315,11 @@ def test_exports(c):
     c.tarea = '=HYPERLINK("bad")'
     c.save()
     book = load_workbook(BytesIO(excel(base())))
-    assert book.active.max_column == 16
-    assert book.active["C2"].data_type == "s"
+    assert book.active.max_column == 15
+    assert book.active["B2"].data_type == "s"
     doc = Document(BytesIO(word(base(), date(2026, 9, 7))))
     text = "\n".join(p.text for p in doc.paragraphs)
-    assert "07/09/2026" in text and "Proyectos Internos" in text
+    assert "07/09/2026" in text and "Proyectos" in text
 
 
 def test_idempotent_seed(users):

@@ -18,7 +18,6 @@ class Command(BaseCommand):
             created_by="seed_demo",
             defaults=dict(
                 proyecto="Proyectos",
-                iniciativa="Proyectos Internos",
                 status=settings.CLOSED_STATUS_CODE,
                 meta=95,
                 responsable_pyp="HP",
@@ -43,7 +42,7 @@ class Command(BaseCommand):
                 "Revisar acuerdos del comité",
                 "Publicar formatos de seguimiento",
                 "Coordinar integración con TI",
-                "Definir alcance de iniciativa",
+                "Definir alcance del proyecto",
             ]
         ):
             c, created = Compromiso.all_objects.get_or_create(
@@ -51,7 +50,6 @@ class Command(BaseCommand):
                 created_by="seed_demo",
                 defaults=dict(
                     proyecto=["Proyectos", "Operaciones"][index % 2],
-                    iniciativa=["Transformación digital", "Mejora continua"][index % 2],
                     responsable_pyp=["HP", "MR", "LC"][index % 3],
                     status=settings.PENDING_STATUS_CODE
                     if index % 2

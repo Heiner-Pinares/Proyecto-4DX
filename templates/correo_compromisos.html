@@ -48,7 +48,6 @@
         <div class="group-body" style="padding:8px 14px 14px">
           {% for c in grupo.rows %}
           <div style="margin-top:16px;font-size:12px;font-weight:bold;color:#da291c;letter-spacing:1px;text-transform:uppercase">{{ c.proyecto|default:'Sin proyecto' }}</div>
-          {% if c.iniciativa %}<div style="margin:4px 0 9px;font-size:15px;color:#667085;line-height:1.5">{{ c.iniciativa }}</div>{% endif %}
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border:1px solid #e4e7ec;border-left:3px solid #da291c;border-radius:8px;background:#ffffff;margin:0 0 18px">
             <tr><td class="task" style="padding:18px 20px;overflow-wrap:anywhere">
               <span style="display:inline-block;padding:5px 12px;border-radius:20px;background:{{ c.correo_fondo }};color:{{ c.correo_color }};font-weight:bold;font-size:13px">{{ c.situacion }}</span>

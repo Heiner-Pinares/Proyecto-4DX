@@ -13,7 +13,6 @@ from .services import audit
 
 COLUMNS = [
     ("proyecto", "Proyecto", "text"),
-    ("iniciativa", "Iniciativa", "text"),
     ("tarea", "Tarea", "textarea"),
     ("status", "Estatus", "readonly"),
     ("meta", "Meta", "number"),
@@ -27,9 +26,9 @@ COLUMNS = [
     ("primera_fecha", "1ERA FECHA", "date"),
     ("segunda_fecha", "2DA FECHA", "date"),
     ("tercera_fecha", "3RA FECHA", "date"),
-    ("notas", "Notas", "textarea"),
     ("suspendida", "Stand By", "boolean"),
     ("situacion_plazo", "Situación", "readonly"),
+    ("notas", "Comentarios", "comments"),
 ]
 EDITABLE = {name: kind for name, _, kind in COLUMNS if kind != "readonly"}
 DEADLINES = ["primera_fecha", "segunda_fecha", "tercera_fecha"]
@@ -63,6 +62,8 @@ def fila(c):
         )
         if name == "puntaje" and value is not None:
             display = f"{int(value)} %"
+        if name == "notas":
+            display = "Ver comentario" if value else "Agregar comentario"
         cells.append(
             {
                 "name": name,
@@ -70,6 +71,7 @@ def fila(c):
                 "kind": kind,
                 "value": raw,
                 "display": display,
+                "has_value": bool(value),
                 "editable": name in EDITABLE,
                 "options": ([{"codigo": "", "nombre": "Sin asignar"}] + [{"codigo": code, "nombre": label} for code, label in Compromiso.JEFATURAS]) if name == "jefatura" else None,
             }

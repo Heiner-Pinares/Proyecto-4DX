@@ -11,7 +11,7 @@ pytestmark = pytest.mark.django_db
 
 
 def make(**kwargs):
-    fields = dict(proyecto='Operaciones', iniciativa='Entrega', tarea='Preparar entrega',
+    fields = dict(proyecto='Operaciones', tarea='Preparar entrega',
                   status='EC', responsable_pyp='Ana', fecha_de_compromiso=date(2026, 9, 1),
                   fecha_de_vencimiento=date(2026, 9, 8))
     fields.update(kwargs)

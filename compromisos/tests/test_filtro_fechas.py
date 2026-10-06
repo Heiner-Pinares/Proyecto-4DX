@@ -18,7 +18,7 @@ def etapas():
     result = {}
     for n in range(4):
         result[str(n)] = Compromiso.objects.create(
-            proyecto='Proyecto', iniciativa='Pruebas', tarea=f'Etapa {n}', responsable_pyp='HP',
+            proyecto='Proyecto', tarea=f'Etapa {n}', responsable_pyp='HP',
             primera_fecha=date(2026,9,1) if n >= 1 else None,
             segunda_fecha=date(2026,9,10) if n >= 2 else None,
             tercera_fecha=date(2026,9,20) if n >= 3 else None,
@@ -46,6 +46,6 @@ def test_render_pagination_export_and_other_filters(client, etapas):
     assert {r['id'] for r in response.context['rows']} == {etapas['1'].pk, etapas['3'].pk}
     book = load_workbook(BytesIO(client.get('/exportar/xlsx/?'+query).content))
     assert book.active.max_row == 3
-    assert {book.active.cell(n,3).value for n in (2,3)} == {'Etapa 1','Etapa 3'}
+    assert {book.active.cell(n,2).value for n in (2,3)} == {'Etapa 1','Etapa 3'}
     assert filtrar({'etapa_fecha':['1','3'], 'q':'Etapa 3'}).get().pk == etapas['3'].pk
     assert filtrar({'etapa_fecha':'2'}).get().pk == etapas['2'].pk

@@ -218,7 +218,6 @@ def fields_for(item, filename, sheet_name):
     return {
         "codigo_fuente": item.source_key,
         "proyecto": item.project,
-        "iniciativa": "",
         "tarea": item.activity,
         "status": "EC",
         "responsable_pyp": item.owner,

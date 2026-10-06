@@ -47,7 +47,6 @@ def test_import_is_dry_run_by_default_and_idempotent(tmp_path):
     assert Compromiso.objects.count() == 2
     closed = Compromiso.objects.get(codigo_fuente="excel4dx:5:5.1")
     assert closed.proyecto == "Recibo PDF"
-    assert closed.iniciativa == ""
     assert closed.jefatura == "Jefatura de Soporte Oper Post Facturacion"
     assert closed.status == "T"
     assert closed.fecha_real.isoformat() == "2026-09-11"

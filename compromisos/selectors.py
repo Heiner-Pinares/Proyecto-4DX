@@ -71,7 +71,7 @@ def filtrar(params, hoy=None):
         qs = qs.filter(condicion)
     if params.get("q"):
         q = Q()
-        for field in ["proyecto", "iniciativa", "tarea", "responsable_pyp", "notas"]:
+        for field in ["proyecto", "tarea", "responsable_pyp", "notas"]:
             q |= Q(**{field + "__icontains": params["q"]})
         qs = qs.filter(q)
     statuses = (
@@ -86,7 +86,6 @@ def filtrar(params, hoy=None):
         qs = qs.filter(estatus__in=statuses)
     for field in [
         "proyecto",
-        "iniciativa",
         "responsable_pyp",
         "jefatura",
         "mes",
