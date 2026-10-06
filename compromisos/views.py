@@ -358,6 +358,7 @@ def indicadores(request):
 @login_required
 def reportes(request):
     from .correo import token_correo
+    from django.conf import settings
     try:
         corte = date.fromisoformat(request.GET.get("corte") or timezone.localdate().isoformat())
     except ValueError:
@@ -374,6 +375,8 @@ def reportes(request):
             "correo_query": params.urlencode(),
             "correo_token_seguimiento": token_correo(request.user, params.urlencode(), "seguimiento"),
             "correo_token_semanal": token_correo(request.user, params.urlencode(), "semanal"),
+            "correo_para": settings.CORREO_PARA,
+            "correo_copia": settings.CORREO_COPIA,
             **filtros(request),
         },
     )

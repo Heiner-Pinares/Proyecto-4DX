@@ -2,9 +2,15 @@
 
 En Reportes → Resumen semanal por jefatura, actualizar corte y filtros y pulsar «Enviar resumen por correo». Usa exactamente la plantilla HTML de la vista previa, regenerada con los datos actuales al pulsar el botón.
 
-Destinatarios fijos, tanto en encabezados como en el sobre sendmail:
-- Para: c27826@claro.com.pe
-- Cc: c28171@claro.com.pe
+Los destinatarios se configuran en `.env`, tanto para los encabezados como para el sobre sendmail. Separa varios correos con comas:
+
+```env
+CORREO_PARA=c27826@claro.com.pe,otro.usuario@claro.com.pe
+CORREO_COPIA=c28171@claro.com.pe,otra.copia@claro.com.pe
+```
+
+`CORREO_PARA` requiere al menos una dirección. `CORREO_COPIA` puede quedar vacío. El portal valida las direcciones al generar el correo; no acepta destinatarios enviados desde el navegador.
+
 - Remitente: 4DX Facturación <4dx@claro.com.pe>
 
 Se adaptó el mecanismo SSH/sendmail del script entregado. El mensaje MIME se transmite por entrada estándar; no se suben archivos temporales ni se agregan los adjuntos del ejemplo. El portal incluye la conexión solicitada como configuración predeterminada; `CORREO_SSH_HOST`, `CORREO_SSH_USER` y `CORREO_SSH_PASSWORD` permiten sustituirla desde `.env`. Requiere acceso a la red corporativa o VPN y permiso para ejecutar sendmail en ese servidor.

@@ -37,7 +37,11 @@ def test_week_and_scores(client):
     assert response.status_code==200
     assert response['X-Frame-Options']=='SAMEORIGIN'
     assert 'attachment' in response['Content-Disposition']
-    assert 'Jefatura de Facturacion a Clientes' in response.content.decode()
+    html = response.content.decode()
+    assert 'Jefatura de Facturacion a Clientes' in html
+    assert '>Proyecto<' in html and '>Tarea<' in html
+    assert 'Tarea real' in html
+    assert '{{PROYECTO_' not in html
     assert client.get('/reportes/semanal/?corte=bad').status_code==400
     assert client.get('/reportes/semanal/?q=ausente').context['total_proximos']==0
     assert client.get('/reportes/').status_code==200

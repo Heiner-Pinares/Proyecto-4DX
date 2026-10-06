@@ -66,16 +66,33 @@
                 <div style="font-size:19px;line-height:1.35;font-weight:700;color:{{ g.color }};">{{ g.nombre }}</div>
                 <div style="font-size:15px;line-height:1.45;color:{{ g.color }};margin-top:4px;">{{ g.proximos|length }} por vencer</div>
               </td></tr>
-              <tr><td style="padding:4px 18px 6px 18px;background:#FFFFFF;">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="table-layout:fixed;">
+              <tr><td style="padding:14px 18px 18px 18px;background:#FFFFFF;">
                 {% for c in g.proximos %}
-                  <tr><td valign="top" width="22" style="width:22px;padding:15px 0;color:{{ g.color }};font-size:19px;line-height:1;">●</td>
-                  <td style="padding:12px 0 13px 0;{% if not forloop.last %}border-bottom:1px solid {{ g.fondo }};{% endif %}overflow-wrap:anywhere;word-wrap:break-word;">
-                    <div style="font-size:17px;line-height:1.45;font-weight:700;color:#172D4A;">{{ c.tarea }}</div>
-                    <div style="font-size:15px;line-height:1.5;color:#526276;margin-top:4px;">{{ c.objetivo|date:'d/m/Y' }} &nbsp;·&nbsp; Responsable: <strong style="color:#334E68;">{{ c.responsable_pyp|default:'Por asignar' }}</strong></div>
-                  </td></tr>
-                {% empty %}<tr><td style="padding:18px 0;font-size:16px;line-height:1.55;color:#526276;">Sin compromisos próximos a vencer en este período.</td></tr>{% endfor %}
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;margin:{% if not forloop.first %}14px 0 0 0{% else %}0{% endif %};border:1px solid #DCE5EE;border-radius:12px;background:#FFFFFF;">
+                  <tr>
+                    <td style="padding:18px 18px 8px 18px;overflow-wrap:anywhere;word-wrap:break-word;">
+                      <div style="font-size:12px;line-height:1.35;font-weight:700;letter-spacing:1px;color:#64748B;text-transform:uppercase;">Proyecto</div>
+                      <div style="font-size:20px;line-height:1.35;font-weight:700;color:#172D4A;margin-top:7px;">{{ c.proyecto|default:'Sin proyecto' }}</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 18px 14px 18px;overflow-wrap:anywhere;word-wrap:break-word;">
+                      <div style="font-size:12px;line-height:1.35;font-weight:700;letter-spacing:1px;color:#64748B;text-transform:uppercase;">Tarea</div>
+                      <div style="font-size:17px;line-height:1.5;color:#334E68;margin-top:7px;">{{ c.tarea }}</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 18px 18px 18px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;background:#F6F8FA;border-radius:9px;">
+                        <tr>
+                          <td valign="middle" style="padding:12px 14px;font-size:14px;line-height:1.45;color:#526276;"><strong style="color:#334E68;">Vence:</strong> {{ c.objetivo|date:'d/m/Y' }}</td>
+                          <td valign="middle" align="right" style="padding:12px 14px;font-size:14px;line-height:1.45;color:#526276;"><strong style="color:#334E68;">Responsable:</strong> {{ c.responsable_pyp|default:'Por asignar' }}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
                 </table>
+                {% empty %}<div style="padding:4px 0;font-size:16px;line-height:1.55;color:#526276;">Sin compromisos próximos a vencer en este período.</div>{% endfor %}
               </td></tr>
             </table>
           </td></tr>

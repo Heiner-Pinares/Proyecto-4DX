@@ -58,8 +58,10 @@ def test_followup_button_sends_its_own_dynamic_html(client, settings):
     assert client.post('/reportes/correo/seguimiento/enviar/?'+query, {'token':wrong}).status_code == 400
 
 
-def test_sendmail_fixed_envelope_and_failure(settings,tmp_path):
+def test_sendmail_configured_envelope_and_failure(settings,tmp_path):
     settings.BASE_DIR=tmp_path
+    settings.CORREO_PARA='c27826@claro.com.pe,supervisor@claro.com.pe'
+    settings.CORREO_COPIA='c28171@claro.com.pe'
     (tmp_path/'work').mkdir()
     with patch('compromisos.correo.paramiko.SSHClient') as factory:
         ssh=factory.return_value
@@ -68,5 +70,5 @@ def test_sendmail_fixed_envelope_and_failure(settings,tmp_path):
         stdout.channel.recv_exit_status.return_value=1
         with pytest.raises(RuntimeError):
             enviar_remoto(construir_mensaje('<p>Prueba</p>',date(2026,9,29)))
-        assert ssh.exec_command.call_args.args[0]=='sendmail -i c27826@claro.com.pe c28171@claro.com.pe'
+        assert ssh.exec_command.call_args.args[0]=='sendmail -i c27826@claro.com.pe supervisor@claro.com.pe c28171@claro.com.pe'
         ssh.close.assert_called_once()

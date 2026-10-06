@@ -102,6 +102,8 @@ PORTAL_PUBLIC_URL = (os.getenv("PORTAL_PUBLIC_URL") or _teams_config.get("PORTAL
 CORREO_SSH_HOST = os.getenv("CORREO_SSH_HOST") or "172.19.30.62"
 CORREO_SSH_USER = os.getenv("CORREO_SSH_USER") or "usr_mds"
 CORREO_SSH_PASSWORD = os.getenv("CORREO_SSH_PASSWORD") or "Usr_mds"
+CORREO_PARA = os.getenv("CORREO_PARA") or "c27826@claro.com.pe"
+CORREO_COPIA = os.getenv("CORREO_COPIA") or "c28171@claro.com.pe"
 
 SESSION_ENGINE = "compromisos.session_backend"
 MIGRATION_MODULES = {"admin": "config.admin_migrations", "sessions": "config.sessions_migrations"}

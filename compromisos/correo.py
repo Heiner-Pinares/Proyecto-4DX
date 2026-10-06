@@ -1,15 +1,18 @@
-"""Envío SSH/sendmail de reportes 4DX con destinatarios fijos."""
+"""Envío SSH/sendmail de reportes 4DX con destinatarios configurados."""
 import socket
+import shlex
 import uuid
 from datetime import date
 from email.message import EmailMessage
 from email.policy import SMTP
-from email.utils import formataddr, formatdate, make_msgid
+from email.utils import formataddr, formatdate, getaddresses, make_msgid
 from pathlib import Path
 
 import paramiko
 from django.conf import settings
 from django.core import signing
+from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.validators import validate_email
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
@@ -30,6 +33,33 @@ COPIA = 'c28171@claro.com.pe'
 SALT = '4dx-correo-semanal'
 
 
+def _lista_correos(valor, nombre, requerido=False):
+    correos = []
+    for correo in str(valor or '').replace(';', ',').split(','):
+        correo = correo.strip()
+        if not correo:
+            continue
+        try:
+            validate_email(correo)
+        except ValidationError as error:
+            raise ImproperlyConfigured(
+                f'{nombre} contiene una dirección de correo no válida.'
+            ) from error
+        if correo not in correos:
+            correos.append(correo)
+    if requerido and not correos:
+        raise ImproperlyConfigured(f'{nombre} debe incluir al menos un correo.')
+    return correos
+
+
+def destinatarios():
+    """Destinatarios definidos por el servidor, nunca por el navegador."""
+    return (
+        _lista_correos(getattr(settings, 'CORREO_PARA', PARA), 'CORREO_PARA', True),
+        _lista_correos(getattr(settings, 'CORREO_COPIA', COPIA), 'CORREO_COPIA'),
+    )
+
+
 def token_correo(user, query, tipo='semanal'):
     return signing.dumps(
         {'user': user.pk, 'query': query, 'tipo': tipo, 'id': str(uuid.uuid4())},
@@ -38,10 +68,12 @@ def token_correo(user, query, tipo='semanal'):
 
 
 def construir_mensaje(html, corte, tipo='semanal'):
+    para, copia = destinatarios()
     msg = EmailMessage(policy=SMTP)
     msg['From'] = formataddr(('4DX Facturación', '4dx@claro.com.pe'))
-    msg['To'] = PARA
-    msg['Cc'] = COPIA
+    msg['To'] = ', '.join(para)
+    if copia:
+        msg['Cc'] = ', '.join(copia)
     if tipo == 'seguimiento':
         msg['Subject'] = f'Seguimiento de compromisos 4DX · Corte {corte:%d/%m/%Y}'
         texto = 'Recordatorio de compromisos 4DX. Abre este mensaje en un cliente compatible con HTML para consultar el detalle.'
@@ -56,6 +88,21 @@ def construir_mensaje(html, corte, tipo='semanal'):
 
 
 def enviar_remoto(msg):
+    correos = []
+    for _, correo in getaddresses(
+        [str(valor) for nombre in ('To', 'Cc') for valor in msg.get_all(nombre, [])]
+    ):
+        correo = correo.strip()
+        if correo and correo not in correos:
+            try:
+                validate_email(correo)
+            except ValidationError as error:
+                raise ImproperlyConfigured(
+                    'El mensaje contiene un destinatario no válido.'
+                ) from error
+            correos.append(correo)
+    if not correos:
+        raise ImproperlyConfigured('El mensaje no contiene destinatarios.')
     ssh = paramiko.SSHClient()
     known = Path(settings.BASE_DIR) / 'work' / 'correo_known_hosts'
     known.parent.mkdir(exist_ok=True)
@@ -68,8 +115,9 @@ def enviar_remoto(msg):
                     password=settings.CORREO_SSH_PASSWORD,timeout=10,banner_timeout=10,
                     auth_timeout=10,allow_agent=False,look_for_keys=False)
         known.chmod(0o600)
-        # Destinatarios de sobre fijos también: nunca se reciben del navegador ni del HTML.
-        stdin, stdout, stderr = ssh.exec_command('sendmail -i c27826@claro.com.pe c28171@claro.com.pe',timeout=20)
+        # El sobre replica únicamente los encabezados validados de la configuración privada.
+        comando = 'sendmail -i ' + ' '.join(shlex.quote(correo) for correo in correos)
+        stdin, stdout, stderr = ssh.exec_command(comando,timeout=20)
         stdin.write(msg.as_bytes())
         stdin.flush()
         stdin.channel.shutdown_write()
@@ -115,7 +163,11 @@ def _enviar_reporte(request, tipo):
         context['tablero_url'] = (settings.PORTAL_PUBLIC_URL or request.build_absolute_uri('/').rstrip('/')) + reverse('dashboard')
         template = 'resumen_semanal.html'
     html = render_to_string(template, context)
-    msg = construir_mensaje(html, corte, tipo)
+    try:
+        msg = construir_mensaje(html, corte, tipo)
+    except ImproperlyConfigured as error:
+        messages.error(request, str(error))
+        return redirect(destination)
     try:
         with transaction.atomic():
             record = EventoCompromiso.envios.create(canal='correo', token=claim['id'],usuario=request.user.get_username(),corte=corte)
@@ -139,6 +191,8 @@ def _enviar_reporte(request, tipo):
     else:
         record.estado = 'aceptado'
         nombre = 'recordatorio de seguimiento' if tipo == 'seguimiento' else 'resumen semanal'
-        messages.success(request,f'El servidor de correo aceptó el {nombre} para {PARA}, con copia a {COPIA}. La entrega final depende del servidor de correo.')
+        para, copia = destinatarios()
+        copia_texto = f", con copia a {', '.join(copia)}" if copia else ''
+        messages.success(request,f"El servidor de correo aceptó el {nombre} para {', '.join(para)}{copia_texto}. La entrega final depende del servidor de correo.")
     record.save(update_fields=['estado'])
     return redirect(destination)
