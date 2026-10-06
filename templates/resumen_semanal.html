@@ -32,7 +32,7 @@
           <tr>
             <td style="padding:14px 30px 30px 30px;">
               <div style="font-size:28px;line-height:1.25;font-weight:700;color:#172D4A;margin:0 0 10px 0;">¡Hola equipo!</div>
-              <div style="font-size:17px;line-height:1.6;color:#334E68;margin:0 0 16px 0;">Aquí tienes el resumen del cumplimiento y los compromisos próximos a vencer de cada jefatura.</div>
+              <div style="font-size:17px;line-height:1.6;color:#334E68;margin:0 0 16px 0;">Aquí tienes el resumen del cumplimiento y los compromisos en curso o demorados de cada jefatura.</div>
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0;">
                 <tr>
                   <td style="background:#F1F5F9;border:1px solid #E2E8F0;border-radius:20px;padding:8px 14px;font-size:15px;line-height:1.4;color:#526276;">
@@ -48,11 +48,11 @@
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#EAF8FF;border:1px solid #B9E7F7;border-radius:12px;">
                 <tr>
                   <td valign="middle" width="64" align="center" style="width:64px;padding:18px 4px 18px 18px;">
-                    <div style="width:46px;height:46px;line-height:46px;border-radius:50%;background:#009FDF;color:#FFFFFF;font-size:22px;font-weight:700;text-align:center;">{{ total_proximos }}</div>
+                    <div style="width:46px;height:46px;line-height:46px;border-radius:50%;background:#009FDF;color:#FFFFFF;font-size:22px;font-weight:700;text-align:center;">{{ total_seguimiento }}</div>
                   </td>
                   <td valign="middle" style="padding:18px 20px 18px 12px;">
-                    <div style="font-size:20px;line-height:1.35;font-weight:700;color:#005C80;">Compromisos próximos a vencer</div>
-                    <div style="font-size:16px;line-height:1.5;color:#334E68;margin-top:4px;">{{ total_proximos }} compromiso{{ total_proximos|pluralize:"s" }} requiere{{ total_proximos|pluralize:"n" }} atención esta semana.</div>
+                    <div style="font-size:20px;line-height:1.35;font-weight:700;color:#005C80;">Compromisos que requieren seguimiento</div>
+                    <div style="font-size:16px;line-height:1.5;color:#334E68;margin-top:4px;">{{ total_en_curso }} en curso · {{ total_demorados }} demorado{{ total_demorados|pluralize:"s" }}/vencido{{ total_demorados|pluralize:"s" }}. De ellos, {{ total_proximos }} vence{{ total_proximos|pluralize:"n" }} en los próximos días.</div>
                   </td>
                 </tr>
               </table>
@@ -64,13 +64,14 @@
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid {{ g.color }};border-left:6px solid {{ g.color }};border-radius:12px;overflow:hidden;">
               <tr><td style="padding:16px 18px;background:{{ g.fondo }};">
                 <div style="font-size:19px;line-height:1.35;font-weight:700;color:{{ g.color }};">{{ g.nombre }}</div>
-                <div style="font-size:15px;line-height:1.45;color:{{ g.color }};margin-top:4px;">{{ g.proximos|length }} por vencer</div>
+                <div style="font-size:15px;line-height:1.45;color:{{ g.color }};margin-top:4px;">{{ g.seguimiento|length }} activo{{ g.seguimiento|length|pluralize:"s" }} · {{ g.en_curso|length }} en curso · {{ g.demorados|length }} demorado{{ g.demorados|length|pluralize:"s" }}/vencido{{ g.demorados|length|pluralize:"s" }}</div>
               </td></tr>
               <tr><td style="padding:14px 18px 18px 18px;background:#FFFFFF;">
-                {% for c in g.proximos %}
+                {% for c in g.seguimiento %}
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;margin:{% if not forloop.first %}14px 0 0 0{% else %}0{% endif %};border:1px solid #DCE5EE;border-radius:12px;background:#FFFFFF;">
                   <tr>
                     <td style="padding:18px 18px 8px 18px;overflow-wrap:anywhere;word-wrap:break-word;">
+                      <div style="margin-bottom:10px;"><span style="display:inline-block;padding:5px 9px;border-radius:14px;background:{{ c.resumen_fondo }};color:{{ c.resumen_color }};font-size:12px;line-height:1.2;font-weight:700;">{{ c.resumen_estado }}</span></div>
                       <div style="font-size:12px;line-height:1.35;font-weight:700;letter-spacing:1px;color:#64748B;text-transform:uppercase;">Proyecto</div>
                       <div style="font-size:20px;line-height:1.35;font-weight:700;color:#172D4A;margin-top:7px;">{{ c.proyecto|default:'Sin proyecto' }}</div>
                     </td>
@@ -85,14 +86,14 @@
                     <td style="padding:0 18px 18px 18px;">
                       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;background:#F6F8FA;border-radius:9px;">
                         <tr>
-                          <td valign="middle" style="padding:12px 14px;font-size:14px;line-height:1.45;color:#526276;"><strong style="color:#334E68;">Vence:</strong> {{ c.objetivo|date:'d/m/Y' }}</td>
+                          <td valign="middle" style="padding:12px 14px;font-size:14px;line-height:1.45;color:#526276;"><strong style="color:#334E68;">Vence:</strong> {{ c.objetivo|date:'d/m/Y'|default:'Por definir' }}</td>
                           <td valign="middle" align="right" style="padding:12px 14px;font-size:14px;line-height:1.45;color:#526276;"><strong style="color:#334E68;">Responsable:</strong> {{ c.responsable_pyp|default:'Por asignar' }}</td>
                         </tr>
                       </table>
                     </td>
                   </tr>
                 </table>
-                {% empty %}<div style="padding:4px 0;font-size:16px;line-height:1.55;color:#526276;">Sin compromisos próximos a vencer en este período.</div>{% endfor %}
+                {% empty %}<div style="padding:4px 0;font-size:16px;line-height:1.55;color:#526276;">Sin compromisos en curso ni demorados.</div>{% endfor %}
               </td></tr>
             </table>
           </td></tr>
@@ -150,7 +151,7 @@
           <tr>
             <td style="padding:0 30px 28px 30px;">
               <div style="border-top:1px solid #E2E8F0;padding-top:18px;font-size:13px;line-height:1.55;color:#64748B;">
-                Generado por 4DX · Información actual de la plataforma según los filtros aplicados. Se excluyen registros en Stand By y eliminados. Cumplimiento: promedio de los puntajes 100/80/60 de cierres al corte; no mide el porcentaje de tareas completadas. No reconstruye versiones históricas. El tablero requiere iniciar sesión.
+                Generado por 4DX · Información actual de la plataforma según los filtros aplicados. El detalle incluye todos los compromisos en curso y demorados/vencidos; los próximos a vencer forman parte de los compromisos en curso. Se excluyen registros en Stand By, terminados y eliminados del detalle. Cumplimiento: promedio de los puntajes 100/80/60 de cierres al corte; no mide el porcentaje de tareas completadas. No reconstruye versiones históricas. El tablero requiere iniciar sesión.
               </div>
             </td>
           </tr>

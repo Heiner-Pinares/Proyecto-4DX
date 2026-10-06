@@ -155,12 +155,25 @@ def resumen_jefaturas(qs, corte):
     # sea posterior al corte, como ocurre en varias filas importadas de Excel.
     rows = list(qs.filter(suspendida=False).order_by('objetivo', 'id'))
     palette = [('#DA291C','#FFF0F1'),('#996000','#FFF8DF'),('#007AA8','#EAF8FF')]
-    groups = {name: {'nombre': name, 'color': palette[i][0], 'fondo': palette[i][1], 'proximos': [], 'scores': []}
+    groups = {name: {'nombre': name, 'color': palette[i][0], 'fondo': palette[i][1],
+                     'seguimiento': [], 'proximos': [], 'en_curso': [], 'demorados': [], 'scores': []}
               for i, (name, _) in enumerate(Compromiso.JEFATURAS)}
     scores = []
     for row in rows:
         name = row.jefatura or 'Sin jefatura asignada'
-        group = groups.setdefault(name, {'nombre':name,'color':'#000000','fondo':'#F4F4F4','proximos':[],'scores':[]})
+        group = groups.setdefault(
+            name,
+            {'nombre': name, 'color': '#000000', 'fondo': '#F4F4F4',
+             'seguimiento': [], 'proximos': [], 'en_curso': [], 'demorados': [], 'scores': []},
+        )
+        if not row.fecha_real and row.estatus in {'EC', 'D'}:
+            row.resumen_estado = 'Demorado / Vencido' if row.estatus == 'D' else 'En curso'
+            row.resumen_color = '#DA291C' if row.estatus == 'D' else '#8A6500'
+            row.resumen_fondo = '#FFF0F1' if row.estatus == 'D' else '#FFF7D6'
+            if row.situacion == 'Por vencer':
+                row.resumen_estado = 'Por vencer'
+            group['seguimiento'].append(row)
+            group['demorados' if row.estatus == 'D' else 'en_curso'].append(row)
         if not row.fecha_real and row.situacion == 'Por vencer':
             group['proximos'].append(row)
         if row.fecha_real and row.fecha_real <= corte:
@@ -172,4 +185,8 @@ def resumen_jefaturas(qs, corte):
         group['cerrados'] = len(group['scores'])
     return {'grupos':list(groups.values()), 'corte':corte, 'fin':fin,
             'general':sum(scores)/len(scores) if scores else None,
-            'cerrados':len(scores), 'total_proximos':sum(len(g['proximos']) for g in groups.values())}
+            'cerrados':len(scores),
+            'total_seguimiento':sum(len(g['seguimiento']) for g in groups.values()),
+            'total_en_curso':sum(len(g['en_curso']) for g in groups.values()),
+            'total_demorados':sum(len(g['demorados']) for g in groups.values()),
+            'total_proximos':sum(len(g['proximos']) for g in groups.values())}

@@ -27,10 +27,14 @@ def test_week_and_scores(client):
     ctx=resumen_jefaturas(qs,corte)
     assert ctx['total_proximos']==3
     assert ctx['total_proximos'] == metricas(qs)['proximos']
+    assert ctx['total_seguimiento'] == 5
+    assert ctx['total_en_curso'] == 4
+    assert ctx['total_demorados'] == 1
     assert ctx['general']==100 and ctx['cerrados']==1
     assert len(ctx['grupos'])==4
     sin_jefatura = next(g for g in ctx['grupos'] if g['nombre'] == 'Sin jefatura asignada')
     assert len(sin_jefatura['proximos']) == 2
+    assert len(sin_jefatura['seguimiento']) == 2
     assert client.get('/reportes/semanal/').status_code==302
     client.force_login(User.objects.create_user('semanal'))
     response=client.get('/reportes/semanal/?corte=2026-09-29&descargar=1')
@@ -41,6 +45,9 @@ def test_week_and_scores(client):
     assert 'Jefatura de Facturacion a Clientes' in html
     assert '>Proyecto<' in html and '>Tarea<' in html
     assert 'Tarea real' in html
+    assert 'Compromisos que requieren seguimiento' in html
+    assert 'Demorado / Vencido' in html
+    assert 'En curso' in html
     assert '{{PROYECTO_' not in html
     assert client.get('/reportes/semanal/?corte=bad').status_code==400
     assert client.get('/reportes/semanal/?q=ausente').context['total_proximos']==0
@@ -69,5 +76,6 @@ def test_multiple_status_filter_is_preserved(client):
     assert response.context['estatus_seleccionados'] == ['T', 'S']
     assert response.context['query'] == 'status=T&status=S'
     html = response.content.decode()
+    assert '<article class="gray"><span>Stand By</span>' in html
     assert 'name="status" value="T" checked' in html
     assert 'name="status" value="S" checked' in html
