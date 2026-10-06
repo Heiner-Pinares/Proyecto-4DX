@@ -125,7 +125,7 @@ def agrupados(qs, field):
     return rows
 
 
-def evolucion_mensual(qs, max_meses=12):
+def evolucion_mensual(qs, max_meses=8):
     """Comparativo mensual según la primera fecha objetivo del compromiso.
 
     Un compromiso reprogramado es aquel con segunda/tercera fecha o con evento

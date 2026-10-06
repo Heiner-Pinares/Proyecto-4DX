@@ -16,7 +16,7 @@
 
 {{ evolucion|json_script:'trend-data' }}
 <div class="executive-trends" id="executive-trends" aria-live="polite"></div>
-<script src="{% static 'js/trends.js' %}?v=20261005" defer></script>
+<script src="{% static 'js/trends.js' %}?v=20261005-compact" defer></script>
 
 {{ charts|json_script:'chart-data' }}
 <div id="charts" class="charts-grid"></div>
@@ -33,5 +33,5 @@
     <tbody>{% for r in responsables %}<tr><td>{{ r.nombre }}</td><td>{{ r.total }}</td><td>{{ r.terminados }}</td><td>{{ r.pendientes }}</td><td>{{ r.vencidos }}</td><td>{{ r.suspendidos }}</td><td>{{ r.a_tiempo }}</td><td>{{ r.cumplimiento|floatformat:2 }} %</td><td>{{ r.puntaje|floatformat:2|default:'—' }}</td></tr>{% empty %}<tr><td colspan="9" class="empty">No hay datos para estos filtros.</td></tr>{% endfor %}</tbody>
   </table></div>
 </section>
-<p class="muted">El comparativo mensual usa la primera fecha objetivo, excluye registros en Stand By y respeta los filtros aplicados. Cumplido en primera fecha significa que la fecha real fue igual o anterior a esa primera fecha. Reprogramado significa que existe segunda/tercera fecha o un evento de reprogramación. La meta es el promedio de las metas positivas registradas en los compromisos mostrados.</p>
+<p class="muted">El comparativo mensual usa la primera fecha objetivo, excluye registros en Stand By y respeta los filtros aplicados. Cumplido en primera fecha significa que la fecha real fue igual o anterior a esa primera fecha. Reprogramado significa que existe segunda/tercera fecha o un evento de reprogramación. La meta es el promedio de las metas positivas registradas en los compromisos mostrados. El riesgo de atraso es vencidos / compromisos aplicables: hasta 10 % va bien, de más de 10 % a 25 % requiere atención y por encima de 25 % representa riesgo alto.</p>
 {% endblock %}

@@ -245,6 +245,19 @@ def test_read_pages(c, users, client, url):
     assert client.get(url).status_code == 200
 
 
+def test_indicators_use_risk_chart_instead_of_duplicate_status(c, users, client):
+    client.force_login(users["Consulta"])
+    response = client.get("/indicadores/")
+    charts = response.context["charts"]
+    titles = [chart["title"] for chart in charts]
+
+    assert "Compromisos por estado" not in titles
+    risk = next(chart for chart in charts if chart["title"] == "Riesgo de atraso por jefatura")
+    assert risk["unit"] == "%"
+    assert risk["message"]
+    assert risk["tone"] in {"success", "warning", "danger", "neutral"}
+
+
 @pytest.mark.parametrize(
     "url", ["/usuarios/", "/administracion/", "/papelera/", "/compromisos/nuevo/"]
 )

@@ -220,7 +220,9 @@ def papelera(request):
 def indicadores(request):
     qs = filtrar(request.GET)
     evolucion = evolucion_mensual(qs)
+    k = metricas(qs)
     responsables = agrupados(qs, "responsable_pyp")
+    jefaturas = agrupados(qs, "jefatura")
     sort = request.GET.get("orden", "nombre")
     allowed = [
         "nombre",
@@ -245,12 +247,44 @@ def indicadores(request):
     status = list(
         qs.order_by().values("estatus").annotate(total=Count("id")).order_by("estatus")
     )
+    riesgos = [
+        round(row["vencidos"] * 100 / row["aplicables"], 1)
+        if row["aplicables"]
+        else 0
+        for row in jefaturas
+    ]
+    riesgo_general = (
+        round(k["vencidos"] * 100 / k["aplicables"], 1)
+        if k["aplicables"]
+        else 0
+    )
+    if not k["aplicables"]:
+        evaluacion_riesgo = "No hay compromisos aplicables para evaluar el riesgo de atraso."
+        tono_riesgo = "neutral"
+    elif riesgo_general <= 10:
+        evaluacion_riesgo = f"Vas bien: solo el {riesgo_general:g} % de los compromisos aplicables está vencido."
+        tono_riesgo = "success"
+    elif riesgo_general <= 25:
+        evaluacion_riesgo = f"Requiere atención: el {riesgo_general:g} % de los compromisos aplicables está vencido."
+        tono_riesgo = "warning"
+    else:
+        evaluacion_riesgo = f"Riesgo alto: el {riesgo_general:g} % de los compromisos aplicables está vencido."
+        tono_riesgo = "danger"
     charts = [
         {
-            "title": "Compromisos por estado",
-            "type": "donut",
-            "labels": [r["estatus"] for r in status],
-            "values": [r["total"] for r in status],
+            "title": "Riesgo de atraso por jefatura",
+            "subtitle": "Porcentaje de compromisos vencidos sobre los aplicables",
+            "unit": "%",
+            "labels": [
+                row["nombre"].replace("Jefatura de ", "") for row in jefaturas
+            ],
+            "values": riesgos,
+            "colors": [
+                "#24935C" if value <= 10 else "#F4C430" if value <= 25 else "#DA291C"
+                for value in riesgos
+            ],
+            "message": evaluacion_riesgo,
+            "tone": tono_riesgo,
         },
         {
             "title": "Compromisos por responsable",
@@ -281,7 +315,6 @@ def indicadores(request):
             },
         ]
     )
-    jefaturas = agrupados(qs, "jefatura")
     overview = [
         {"title": "Cumplimiento por jefaturas", "type": "vertical", "unit": "%", "labels": [r["nombre"].replace("Jefatura de ", "") for r in jefaturas], "values": [r["cumplimiento"] for r in jefaturas]},
         {
@@ -311,7 +344,7 @@ def indicadores(request):
         "indicadores.html",
         {
             "title": "Indicadores",
-            "k": metricas(qs),
+            "k": k,
             "responsables": responsables,
             "charts": charts,
             "evolucion": evolucion,

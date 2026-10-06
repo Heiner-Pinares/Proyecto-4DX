@@ -7,9 +7,10 @@ if(source){
  JSON.parse(source.textContent).forEach((chart,index)=>{
   const section=document.createElement('section');section.className='panel padded chart';
   const h=document.createElement('h2');h.textContent=chart.title;section.append(h);
+  if(chart.subtitle){const subtitle=document.createElement('p');subtitle.className='chart-subtitle';subtitle.textContent=chart.subtitle;section.append(subtitle);}
   const container=index<4?document.getElementById('charts'):document.getElementById('more-charts')||document.getElementById('charts');
   const palette=Array.isArray(chart.colors)&&chart.colors.length?chart.colors:colors;
-  const values=chart.values.map(v=>Number(v)||0),n=values.length,max=Math.max(...values,1),unit=chart.unit??(chart.title.includes('Cumplimiento')||chart.title.includes('cumplimiento')?'%':'');
+  const values=chart.values.map(v=>Number(v)||0),n=values.length,max=Math.max(...values,1),unit=chart.unit??(chart.title.includes('Cumplimiento')||chart.title.includes('cumplimiento')?'%':''),scaleMax=unit==='%'?Math.max(100,max):max;
   const fmt=v=>new Intl.NumberFormat('es-PE',{maximumFractionDigits:1}).format(v)+unit;
   if(!n){const p=document.createElement('p');p.textContent='No hay datos para estos filtros.';section.append(p);container.append(section);return;}
   const svg=node('svg',{viewBox:`0 0 540 ${chart.type?'250':Math.max(190,n*40+20)}`,role:'img','aria-label':chart.title});
@@ -26,8 +27,8 @@ if(source){
    coords.forEach(([x,y],i)=>{const mark=chart.type==='line'?node('circle',{cx:x,cy:y,r:4,fill:'#287994'}):node('rect',{x:x-Math.min(64,330/n)/2,y,width:Math.min(64,330/n),height:190-y,rx:4,fill:palette[i%palette.length]});mark.append(node('title',{},`${chart.labels[i]}: ${fmt(values[i])}`));svg.append(mark);svg.append(node('text',{x,y:y-9,'text-anchor':'middle','font-size':11,fill:'#3e5874'},fmt(values[i])));
     if(n<=8||i%Math.ceil(n/8)===0||i===n-1){const label=chart.labels[i];svg.append(node('text',{x,y:214,'text-anchor':'middle','font-size':10,fill:'#526b8a'},label.length>23?label.slice(0,22)+'…':label));}
    });
-  }else{values.forEach((v,i)=>{const y=i*40+10;svg.append(node('text',{x:0,y:y+16,'font-size':11,fill:'#425a76'},chart.labels[i].slice(0,26)));svg.append(node('rect',{x:185,y,width:285*v/max,height:22,rx:4,fill:colors[1]}));svg.append(node('text',{x:190+285*v/max,y:y+16,'font-size':11},fmt(v)));});}
-  section.append(svg);const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent='Ver datos';details.append(summary);chart.labels.forEach((label,i)=>{const p=document.createElement('p');p.textContent=`${label}: ${fmt(values[i])}`;details.append(p);});section.append(details);container.append(section);
+  }else{values.forEach((v,i)=>{const y=i*40+10;svg.append(node('text',{x:0,y:y+16,'font-size':11,fill:'#425a76'},chart.labels[i].slice(0,26)));svg.append(node('rect',{x:185,y,width:285*v/scaleMax,height:22,rx:4,fill:palette[i%palette.length]}));svg.append(node('text',{x:190+285*v/scaleMax,y:y+16,'font-size':11},fmt(v)));});}
+  section.append(svg);if(chart.message){const insight=document.createElement('p');insight.className=`chart-insight ${chart.tone||'neutral'}`;insight.textContent=chart.message;section.append(insight);}const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent='Ver datos';details.append(summary);chart.labels.forEach((label,i)=>{const p=document.createElement('p');p.textContent=`${label}: ${fmt(values[i])}`;details.append(p);});section.append(details);container.append(section);
  });
 }
 for(const link of document.querySelectorAll('[data-sort]')){const url=new URL(location.href),key=link.dataset.sort;url.searchParams.set('orden',url.searchParams.get('orden')===key?'-'+key:key);url.searchParams.delete('page');link.href=url.toString();}
