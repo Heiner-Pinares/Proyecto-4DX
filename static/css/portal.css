@@ -40,11 +40,11 @@ nav a:hover,nav a.active{color:var(--black)}
 .spreadsheet tbody tr td[data-status="T"] {background:#DDF4E6;color:#137333;}
 .spreadsheet td[data-status] .cell-value, .spreadsheet td[data-status] .cell-display {color:inherit;}
 .spreadsheet td[data-status] .cell-editor {color:#000000;}
-.spreadsheet tbody tr td[data-score="100"] {background:#BBAAB6;color:#000000;}
+.spreadsheet tbody tr td[data-score="100.00"],.spreadsheet tbody tr td[data-score="100"] {background:#D9D9D9;color:#000000;}
 .spreadsheet th.col-status, .spreadsheet th.col-puntaje,
 .spreadsheet td.col-status, .spreadsheet td.col-puntaje {text-align:center;vertical-align:middle;}
 .spreadsheet td.col-status .cell-display, .spreadsheet td.col-puntaje .cell-display {display:block;text-align:center;color:inherit;}
-.score-legend .score-100 {background:#BBAAB6;color:#000000;}
+.score-legend .score-100 {background:#D9D9D9;color:#000000;}
 
 /* Desplegable compacto de selección múltiple. */
 .date-stage-filter {min-width:0;font-size:11px;font-weight:600;color:var(--muted);}
