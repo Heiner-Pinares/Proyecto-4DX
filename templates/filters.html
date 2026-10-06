@@ -25,7 +25,7 @@
       <label>Situación<select name="situacion"><option value="">Todas</option>{% for s in situaciones %}<option {% if f.situacion == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label>
       <label>Año<input name="anio" type="number" min="1" max="9999" value="{{ f.anio }}" placeholder="2026"></label>
       <label>Compromiso HCH<select name="compromiso_hch"><option value="">Todos</option><option value="true" {% if f.compromiso_hch == 'true' %}selected{% endif %}>Sí</option><option value="false" {% if f.compromiso_hch == 'false' %}selected{% endif %}>No</option></select></label>
-      <label>Suspendida<select name="suspendida"><option value="">Todas</option><option value="true" {% if f.suspendida == 'true' %}selected{% endif %}>Sí</option><option value="false" {% if f.suspendida == 'false' %}selected{% endif %}>No</option></select></label>
+      <label>Stand By<select name="suspendida"><option value="">Todos</option><option value="true" {% if f.suspendida == 'true' %}selected{% endif %}>Sí</option><option value="false" {% if f.suspendida == 'false' %}selected{% endif %}>No</option></select></label>
       {% if request.path == '/compromisos/' %}
       <div class="date-stage-filter multi-select-filter">
         <span>Fecha comprometida vigente</span>

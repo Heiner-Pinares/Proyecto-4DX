@@ -10,7 +10,7 @@ from .scoring import expresion_puntaje
 from .status import expresion_estatus
 
 SITUACIONES = [
-    "Suspendido",
+    "Stand By",
     "Por definir",
     "Cumplido a tiempo",
     "Cumplido fuera de plazo",
@@ -36,7 +36,7 @@ def base(hoy=None):
         ),
         situacion=Cast(
             Case(
-                When(suspendida=True, then=Value("Suspendido")),
+                When(suspendida=True, then=Value("Stand By")),
                 When(objetivo__isnull=True, then=Value("Por definir")),
                 When(fecha_real__lte=F("objetivo"), then=Value("Cumplido a tiempo")),
                 When(fecha_real__gt=F("objetivo"), then=Value("Cumplido fuera de plazo")),

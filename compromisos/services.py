@@ -24,7 +24,7 @@ def situacion(c, hoy=None):
     hoy = hoy or timezone.localdate()
     objetivo = fecha_objetivo(c)
     if c.suspendida:
-        return "Suspendido"
+        return "Stand By"
     if not objetivo:
         return "Por definir"
     if c.fecha_real:
@@ -170,7 +170,7 @@ def operar(pk, accion, data, user):
     acciones = {
         "reprogramar": "REPROGRAMADO",
         "cerrar": "CERRADO",
-        "suspender": "SUSPENDIDO",
+        "suspender": "STAND BY",
         "reactivar": "REACTIVADO",
         "eliminar": "ELIMINADO",
         "restaurar": "RESTAURADO",

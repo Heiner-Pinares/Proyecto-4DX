@@ -13,7 +13,7 @@ class Command(BaseCommand):
             ("EC", "En curso"),
             ("D", "Demorado"),
             (settings.CLOSED_STATUS_CODE, "Terminado"),
-            ("S", "Suspendido"),
+            ("S", "Stand By"),
         ]:
             EventoCompromiso.estados.update_or_create(codigo=code, defaults={"nombre": label, "activo": True})
         EventoCompromiso.estados.exclude(codigo__in=["EC", "S", "T", "D"]).update(activo=False)

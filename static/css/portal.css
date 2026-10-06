@@ -22,7 +22,10 @@ nav a:hover,nav a.active{color:var(--black)}
 .avatar,.report-icon{color:var(--black)}
 .badge[data-status="Por vencer"]{background:var(--yellow);color:var(--black)}
 .badge[data-status="Cumplido a tiempo"]{background:var(--cyan);color:var(--black)}
-.badge[data-status="Suspendido"]{background:var(--pink);color:var(--black)}
+.badge[data-status="EC"],.badge[data-status="En curso"]{background:#FFF3BF;color:#7A5700}
+.badge[data-status="S"],.badge[data-status="Stand By"]{background:#E5E7EB;color:#4B5563}
+.badge[data-status="T"],.badge[data-status="Terminado"]{background:#DDF4E6;color:#137333}
+.badge[data-status="D"],.badge[data-status="Demorado"]{background:#F8D7DA;color:#B42318}
 .score-100{background:var(--cyan);color:var(--black)}
 .score-80{background:var(--yellow);color:var(--black)}
 .score-60{background:var(--orange);color:var(--black)}
@@ -30,19 +33,13 @@ nav a:hover,nav a.active{color:var(--black)}
 .spreadsheet tbody tr td[data-score="80.00"],.spreadsheet tbody tr td[data-score="80"]{background:var(--yellow-soft)}
 .spreadsheet tbody tr td[data-score="60.00"],.spreadsheet tbody tr td[data-score="60"]{background:var(--orange-soft)}
 
-/* Estatus: colores solicitados para toda la celda. */
-.spreadsheet tbody tr td[data-status="EC"] {background:#00843D;color:#FFFFFF;}
-.spreadsheet tbody tr td[data-status="S"] {background:#FFCB00;color:#000000;}
-.spreadsheet tbody tr td[data-status="T"] {background:#000000;color:#FFFFFF;}
-.spreadsheet tbody tr td[data-status="D"] {background:#DA291C;color:#FFFFFF;}
+/* Estatus y resultados automáticos. */
+.spreadsheet tbody tr td[data-status="EC"] {background:#FFF3BF;color:#7A5700;}
+.spreadsheet tbody tr td[data-status="S"] {background:#E5E7EB;color:#4B5563;}
+.spreadsheet tbody tr td[data-status="D"] {background:#F8D7DA;color:#B42318;}
+.spreadsheet tbody tr td[data-status="T"] {background:#DDF4E6;color:#137333;}
 .spreadsheet td[data-status] .cell-value, .spreadsheet td[data-status] .cell-display {color:inherit;}
 .spreadsheet td[data-status] .cell-editor {color:#000000;}
-
-/* Colores de las referencias Excel y alineación de resultados automáticos. */
-.spreadsheet tbody tr td[data-status="EC"] {background:#CEEED0;color:#285F17;}
-.spreadsheet tbody tr td[data-status="S"] {background:#FCECA6;color:#946721;}
-.spreadsheet tbody tr td[data-status="D"] {background:#F6C9CE;color:#9C0006;}
-.spreadsheet tbody tr td[data-status="T"] {background:#000000;color:#FFFFFF;}
 .spreadsheet tbody tr td[data-score="100"] {background:#BBAAB6;color:#000000;}
 .spreadsheet th.col-status, .spreadsheet th.col-puntaje,
 .spreadsheet td.col-status, .spreadsheet td.col-puntaje {text-align:center;vertical-align:middle;}

@@ -30,7 +30,7 @@ LEGACY = [
     ("2DA FECHA", "segunda_fecha"),
     ("3RA FECHA", "tercera_fecha"),
     ("NOTAS", "notas"),
-    ("Suspendida", "suspendida"),
+    ("Stand By", "suspendida"),
 ]
 
 

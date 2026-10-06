@@ -11,7 +11,7 @@ from docx import Document
 from openpyxl import load_workbook
 
 from compromisos.indicators import evolucion_mensual, metricas
-from compromisos.models import Compromiso
+from compromisos.models import Compromiso, EventoCompromiso
 from compromisos.reports import excel, word
 from compromisos.selectors import base, filtrar
 from compromisos.services import fecha_objetivo, guardar, operar, situacion
@@ -128,7 +128,7 @@ def test_reschedule_legacy(c, users):
         (date(2026, 9, 15), None, False, "En plazo"),
         (None, None, False, "Por definir"),
         (None, date(2026, 9, 8), False, "Por definir"),
-        (date(2026, 9, 1), None, True, "Suspendido"),
+        (date(2026, 9, 1), None, True, "Stand By"),
     ],
 )
 def test_situation_matches_orm(c, due, real, suspended, expected):
@@ -314,6 +314,7 @@ def test_exports(c):
 
 def test_idempotent_seed(users):
     call_command("init_portal")
+    assert EventoCompromiso.estados.get(codigo="S").nombre == "Stand By"
     call_command("seed_demo")
     n = Compromiso.objects.count()
     call_command("seed_demo")

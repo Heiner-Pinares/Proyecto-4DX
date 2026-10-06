@@ -29,7 +29,7 @@ COLUMNS = [
     ("segunda_fecha", "2DA FECHA", "date"),
     ("tercera_fecha", "3RA FECHA", "date"),
     ("notas", "Notas", "textarea"),
-    ("suspendida", "Suspendida", "boolean"),
+    ("suspendida", "Stand By", "boolean"),
     ("situacion_plazo", "Situación", "readonly"),
 ]
 EDITABLE = {name: kind for name, _, kind in COLUMNS if kind != "readonly"}

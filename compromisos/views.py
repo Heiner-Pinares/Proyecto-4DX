@@ -161,7 +161,7 @@ def editar(request, pk=None):
 ACCIONES = {
     "reprogramar": "Reprogramar compromiso",
     "cerrar": "Marcar como terminado",
-    "suspender": "Suspender compromiso",
+    "suspender": "Poner compromiso en Stand By",
     "reactivar": "Reactivar compromiso",
     "eliminar": "Eliminar compromiso",
     "restaurar": "Restaurar compromiso",
@@ -284,7 +284,26 @@ def indicadores(request):
     jefaturas = agrupados(qs, "jefatura")
     overview = [
         {"title": "Cumplimiento por jefaturas", "type": "vertical", "unit": "%", "labels": [r["nombre"].replace("Jefatura de ", "") for r in jefaturas], "values": [r["cumplimiento"] for r in jefaturas]},
-        {"title": "Estado de los compromisos", "type": "donut", "labels": [dict(Compromiso._meta.get_field("status").choices).get(r["estatus"], r["estatus"]) for r in status], "values": [r["total"] for r in status]},
+        {
+            "title": "Estado de los compromisos",
+            "type": "donut",
+            "labels": [
+                dict(Compromiso._meta.get_field("status").choices).get(
+                    r["estatus"], r["estatus"]
+                )
+                for r in status
+            ],
+            "values": [r["total"] for r in status],
+            "colors": [
+                {
+                    "EC": "#F4C430",
+                    "S": "#9CA3AF",
+                    "T": "#24935C",
+                    "D": "#DA291C",
+                }.get(r["estatus"], "#009FDF")
+                for r in status
+            ],
+        },
     ]
     charts = overview + charts
     return render(
