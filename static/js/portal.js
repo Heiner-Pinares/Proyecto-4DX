@@ -8,7 +8,7 @@ if(source){
   const section=document.createElement('section');section.className='panel padded chart';
   const h=document.createElement('h2');h.textContent=chart.title;section.append(h);
   if(chart.subtitle){const subtitle=document.createElement('p');subtitle.className='chart-subtitle';subtitle.textContent=chart.subtitle;section.append(subtitle);}
-  const container=index<4?document.getElementById('charts'):document.getElementById('more-charts')||document.getElementById('charts');
+  const container=(chart.more||index>=4)?document.getElementById('more-charts')||document.getElementById('charts'):document.getElementById('charts');
   const palette=Array.isArray(chart.colors)&&chart.colors.length?chart.colors:colors;
   const values=chart.values.map(v=>Number(v)||0),n=values.length,max=Math.max(...values,1),unit=chart.unit??(chart.title.includes('Cumplimiento')||chart.title.includes('cumplimiento')?'%':''),scaleMax=unit==='%'?Math.max(100,max):max;
   const fmt=v=>new Intl.NumberFormat('es-PE',{maximumFractionDigits:1}).format(v)+unit;

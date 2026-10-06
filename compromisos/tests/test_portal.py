@@ -250,9 +250,11 @@ def test_indicators_use_risk_chart_instead_of_duplicate_status(c, users, client)
 
     assert "Compromisos por estado" not in titles
     risk = next(chart for chart in charts if chart["title"] == "Riesgo de atraso por jefatura")
+    by_owner = next(chart for chart in charts if chart["title"] == "Compromisos por responsable")
     assert risk["unit"] == "%"
     assert risk["message"]
     assert risk["tone"] in {"success", "warning", "danger", "neutral"}
+    assert risk["more"] is True and by_owner["more"] is True
 
 
 @pytest.mark.parametrize(

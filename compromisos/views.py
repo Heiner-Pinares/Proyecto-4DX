@@ -273,6 +273,7 @@ def indicadores(request):
     charts = [
         {
             "title": "Riesgo de atraso por jefatura",
+            "more": True,
             "subtitle": "Porcentaje de compromisos vencidos sobre los aplicables",
             "unit": "%",
             "labels": [
@@ -288,6 +289,7 @@ def indicadores(request):
         },
         {
             "title": "Compromisos por responsable",
+            "more": True,
             "labels": [r["nombre"] for r in responsables],
             "values": [r["total"] for r in responsables],
         },
