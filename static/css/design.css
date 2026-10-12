@@ -119,13 +119,7 @@ body{color:var(--ink);font-size:14px}.ui-icon{width:22px;height:22px;fill:none;s
 
 /* Acceso Portal Claro 4DX. */
 .login-v2{min-height:100vh;min-height:100dvh;margin:0;overflow:auto;background:#eef7ff;color:#101d3b}
-.login-v2-scene{position:fixed;inset:0;background:url('../img/login-landscape.svg') center/cover no-repeat;z-index:0}
-.login-v2-header{position:fixed;z-index:2;left:4.5vw;top:7.5vh;display:flex;align-items:center;gap:32px}
-.login-v2 .claro-logo{font-size:70px;line-height:.86;padding-top:18px;color:#e30613;filter:drop-shadow(0 3px 5px #fff)}
-.login-v2-divider{width:2px;height:68px;background:#ed1b2f;box-shadow:0 0 8px #fff}
-.login-v2-brand-copy{display:grid;gap:2px;text-shadow:0 2px 8px #fff}
-.login-v2-brand-copy strong{font-size:34px;line-height:1.05;letter-spacing:-1.2px;color:#0f1c3b}
-.login-v2-brand-copy span{font-size:25px;line-height:1.2;color:#4e6897}
+.login-v2-scene{position:fixed;inset:0;background:url('../img/fondo_portal_4DX_2560x1440.webp') center center/cover no-repeat;z-index:0}
 .login-v2-main{position:relative;z-index:1;width:100%;max-width:none;min-height:100vh;min-height:100dvh;margin:0;padding:5vh 6vw;display:flex;align-items:center;justify-content:flex-end}
 .login-v2-card{width:min(650px,42vw);padding:34px 48px 44px;background:#fffffff2;border:1px solid #ccd7e5;border-radius:25px;box-shadow:0 22px 60px #54739728,0 2px 8px #fff inset;backdrop-filter:blur(9px)}
 .login-v2-user{width:72px;height:72px;margin:0 auto 20px;display:grid;place-items:center;border:1px solid #ffc6cd;border-radius:20px;background:linear-gradient(145deg,#fff8f9,#ffe9ec);color:#ed1024;box-shadow:0 10px 28px #ed10242b}
@@ -158,11 +152,6 @@ body{color:var(--ink);font-size:14px}.ui-icon{width:22px;height:22px;fill:none;s
 .login-v2-errors ul{margin:0;padding-left:18px}
 
 @media(max-width:1200px){
-  .login-v2-header{left:4vw;top:5vh;gap:22px}
-  .login-v2 .claro-logo{font-size:56px}
-  .login-v2-divider{height:56px}
-  .login-v2-brand-copy strong{font-size:27px}
-  .login-v2-brand-copy span{font-size:19px}
   .login-v2-main{padding:4vh 4vw}
   .login-v2-card{width:min(570px,47vw);padding:28px 38px 35px}
   .login-v2-card h1{font-size:34px}
@@ -172,18 +161,11 @@ body{color:var(--ink);font-size:14px}.ui-icon{width:22px;height:22px;fill:none;s
   .login-v2-submit{min-height:58px;font-size:18px}
 }
 @media(max-width:850px){
-  .login-v2:before{content:'';position:fixed;inset:0;background:#f6faffb8;z-index:1}
-  .login-v2-header{top:24px;left:50%;transform:translateX(-50%);width:max-content;max-width:90vw}
-  .login-v2-main{justify-content:center;align-items:flex-start;padding:150px 20px 35px}
+  .login-v2-main{justify-content:center;padding:24px 20px}
   .login-v2-card{width:min(590px,100%)}
 }
 @media(max-width:560px){
-  .login-v2-header{gap:14px}
-  .login-v2 .claro-logo{font-size:43px;padding-top:13px}
-  .login-v2-divider{height:45px}
-  .login-v2-brand-copy strong{font-size:20px;letter-spacing:-.4px}
-  .login-v2-brand-copy span{font-size:13px}
-  .login-v2-main{padding:120px 12px 24px}
+  .login-v2-main{padding:18px 12px}
   .login-v2-card{padding:24px 20px 27px;border-radius:19px}
   .login-v2-user{width:55px;height:55px}
   .login-v2-user .ui-icon{width:34px;height:34px}
@@ -194,7 +176,6 @@ body{color:var(--ink);font-size:14px}.ui-icon{width:22px;height:22px;fill:none;s
   .login-v2-recovery div{width:250px}
 }
 @media(max-height:720px) and (min-width:851px){
-  .login-v2-header{top:22px}
   .login-v2-main{padding-top:20px;padding-bottom:20px}
   .login-v2-card{padding-top:22px;padding-bottom:25px}
   .login-v2-user{width:52px;height:52px;margin-bottom:10px}
