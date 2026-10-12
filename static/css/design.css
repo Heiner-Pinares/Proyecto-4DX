@@ -116,3 +116,93 @@ body{color:var(--ink);font-size:14px}.ui-icon{width:22px;height:22px;fill:none;s
 .chart-insight.warning{background:#FFF5DC;color:#9A6500}
 .chart-insight.danger{background:#FDEBED;color:#B42318}
 .chart-insight.neutral{background:#F0F2F5;color:#5B6472}
+
+/* Acceso Portal Claro 4DX. */
+.login-v2{min-height:100vh;min-height:100dvh;margin:0;overflow:auto;background:#eef7ff;color:#101d3b}
+.login-v2-scene{position:fixed;inset:0;background:url('../img/login-landscape.svg') center/cover no-repeat;z-index:0}
+.login-v2-header{position:fixed;z-index:2;left:4.5vw;top:7.5vh;display:flex;align-items:center;gap:32px}
+.login-v2 .claro-logo{font-size:70px;line-height:.86;padding-top:18px;color:#e30613;filter:drop-shadow(0 3px 5px #fff)}
+.login-v2-divider{width:2px;height:68px;background:#ed1b2f;box-shadow:0 0 8px #fff}
+.login-v2-brand-copy{display:grid;gap:2px;text-shadow:0 2px 8px #fff}
+.login-v2-brand-copy strong{font-size:34px;line-height:1.05;letter-spacing:-1.2px;color:#0f1c3b}
+.login-v2-brand-copy span{font-size:25px;line-height:1.2;color:#4e6897}
+.login-v2-main{position:relative;z-index:1;width:100%;max-width:none;min-height:100vh;min-height:100dvh;margin:0;padding:5vh 6vw;display:flex;align-items:center;justify-content:flex-end}
+.login-v2-card{width:min(650px,42vw);padding:34px 48px 44px;background:#fffffff2;border:1px solid #ccd7e5;border-radius:25px;box-shadow:0 22px 60px #54739728,0 2px 8px #fff inset;backdrop-filter:blur(9px)}
+.login-v2-user{width:72px;height:72px;margin:0 auto 20px;display:grid;place-items:center;border:1px solid #ffc6cd;border-radius:20px;background:linear-gradient(145deg,#fff8f9,#ffe9ec);color:#ed1024;box-shadow:0 10px 28px #ed10242b}
+.login-v2-user .ui-icon{width:43px;height:43px;fill:#ed1024;stroke:#ed1024;stroke-width:1.5}
+.login-v2-card h1{font-size:40px;line-height:1.1;letter-spacing:-1.1px;text-align:center;color:#0f1c3b;margin:0 0 10px}
+.login-v2-card>p{text-align:center;color:#63799e;font-size:18px;margin:0 0 36px}
+.login-v2-card form>label{display:block;margin:0 0 7px;color:#111a31;font-size:15px;font-weight:700}
+.login-v2-input{display:flex;align-items:center;width:100%;min-height:64px;margin:0 0 18px;border:1px solid #cbd7e4;border-radius:10px;background:#ffffffc9;box-shadow:0 2px 7px #17385a08;transition:border-color .16s,box-shadow .16s}
+.login-v2-input:focus-within{border-color:#ed1024;box-shadow:0 0 0 3px #ed102416}
+.login-v2-input input{width:100%;min-width:0;margin:0;padding:17px 18px;border:0;outline:0;background:transparent;color:#101d3b;font-size:17px;box-shadow:none}
+.login-v2-input input:focus,.login-v2-input input:focus-visible{outline:none;border:0;box-shadow:none}
+.login-v2-input input::placeholder{color:#7b7f87;opacity:1}
+.login-v2-password input{padding-right:8px}
+.login-v2 .password-toggle{display:grid;place-items:center;flex:0 0 58px;height:58px;border:0;background:transparent;color:#10131b}
+.login-v2 .password-toggle .ui-icon{width:29px;height:29px;stroke-width:1.7}
+.login-v2 .password-toggle.is-visible{color:#ed1024}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.login-v2-options{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin:4px 0 25px;color:#546a91}
+.login-v2-remember{display:flex!important;align-items:center;gap:8px;margin:0!important;font-size:14px!important;font-weight:400!important;white-space:nowrap;cursor:pointer}
+.login-v2-remember input{width:18px;height:18px;margin:0;accent-color:#ed1024}
+.login-v2-recovery{position:relative;text-align:right;font-size:14px}
+.login-v2-recovery summary{list-style:none;cursor:pointer;color:#e30613;text-decoration:underline;font-weight:700;white-space:nowrap}
+.login-v2-recovery summary::-webkit-details-marker{display:none}
+.login-v2-recovery[open]{padding-bottom:64px}
+.login-v2-recovery div{position:absolute;right:0;top:30px;width:290px;padding:12px 14px;border:1px solid #f3cbd0;border-radius:9px;background:#fff8f9;color:#5e6470;text-align:left;font-size:12px;line-height:1.5;box-shadow:0 10px 25px #5a273020;z-index:4}
+.login-v2-submit{width:100%;min-height:69px;display:flex;align-items:center;justify-content:center;gap:14px;border:0;border-radius:10px;background:linear-gradient(100deg,#ee0018,#e30613);color:#fff;font-size:20px;font-weight:750;box-shadow:0 10px 24px #e3061326}
+.login-v2-submit:hover{filter:brightness(.94)}
+.login-v2-submit:active{transform:translateY(1px)}
+.login-v2-errors{margin:-5px 0 14px;padding:10px 12px;border-radius:8px;background:#fff0f1;color:#a80d1b;font-size:12px}
+.login-v2-errors ul{margin:0;padding-left:18px}
+
+@media(max-width:1200px){
+  .login-v2-header{left:4vw;top:5vh;gap:22px}
+  .login-v2 .claro-logo{font-size:56px}
+  .login-v2-divider{height:56px}
+  .login-v2-brand-copy strong{font-size:27px}
+  .login-v2-brand-copy span{font-size:19px}
+  .login-v2-main{padding:4vh 4vw}
+  .login-v2-card{width:min(570px,47vw);padding:28px 38px 35px}
+  .login-v2-card h1{font-size:34px}
+  .login-v2-card>p{font-size:15px;margin-bottom:25px}
+  .login-v2-user{width:62px;height:62px;margin-bottom:14px}
+  .login-v2-input{min-height:55px;margin-bottom:14px}
+  .login-v2-submit{min-height:58px;font-size:18px}
+}
+@media(max-width:850px){
+  .login-v2:before{content:'';position:fixed;inset:0;background:#f6faffb8;z-index:1}
+  .login-v2-header{top:24px;left:50%;transform:translateX(-50%);width:max-content;max-width:90vw}
+  .login-v2-main{justify-content:center;align-items:flex-start;padding:150px 20px 35px}
+  .login-v2-card{width:min(590px,100%)}
+}
+@media(max-width:560px){
+  .login-v2-header{gap:14px}
+  .login-v2 .claro-logo{font-size:43px;padding-top:13px}
+  .login-v2-divider{height:45px}
+  .login-v2-brand-copy strong{font-size:20px;letter-spacing:-.4px}
+  .login-v2-brand-copy span{font-size:13px}
+  .login-v2-main{padding:120px 12px 24px}
+  .login-v2-card{padding:24px 20px 27px;border-radius:19px}
+  .login-v2-user{width:55px;height:55px}
+  .login-v2-user .ui-icon{width:34px;height:34px}
+  .login-v2-card h1{font-size:30px}
+  .login-v2-card>p{font-size:14px}
+  .login-v2-options{gap:10px}
+  .login-v2-recovery summary,.login-v2-remember{font-size:12px!important}
+  .login-v2-recovery div{width:250px}
+}
+@media(max-height:720px) and (min-width:851px){
+  .login-v2-header{top:22px}
+  .login-v2-main{padding-top:20px;padding-bottom:20px}
+  .login-v2-card{padding-top:22px;padding-bottom:25px}
+  .login-v2-user{width:52px;height:52px;margin-bottom:10px}
+  .login-v2-user .ui-icon{width:32px;height:32px}
+  .login-v2-card h1{font-size:30px}
+  .login-v2-card>p{margin-bottom:17px}
+  .login-v2-input{min-height:49px;margin-bottom:10px}
+  .login-v2-input input{padding-top:12px;padding-bottom:12px}
+  .login-v2-options{margin-bottom:15px}
+  .login-v2-submit{min-height:51px}
+}

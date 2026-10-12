@@ -1,1 +1,66 @@
-{% load static %}<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="{% static 'img/icon.svg' %}"><title>Ingresar · 4DX</title><link rel="stylesheet" href="{% static 'css/portal.css' %}"><link rel="stylesheet" href="{% static 'css/design.css' %}?v=20261002-claro-logo"><script src="{% static 'js/design.js' %}" defer></script></head><body class="login-designed"><header class="login-header"><div class="claro-logo" aria-label="Claro">Claro<span aria-hidden="true"></span></div><span>GERENCIA DE FACTURACIÓN A CLIENTES</span></header><main class="login-layout"><section class="welcome"><p class="welcome-label">PORTAL DE SEGUIMIENTO 4DX</p><h1>Bienvenido</h1><p>Gestiona y da seguimiento a tus compromisos 4DX.<br>Juntos impulsamos nuestros resultados.</p><div class="benefits"><div><span>{% include 'icon.html' with name='chart' %}</span>Más ventas</div><div><span>{% include 'icon.html' with name='target' %}</span>Mayor rentabilidad</div><div><span>{% include 'icon.html' with name='user' %}</span>Mejor servicio</div></div></section><section class="login-card"><div class="eyebrow">INGRESA</div><h2>a tu espacio</h2><p>Portal de gestión de compromisos 4DX</p><form method="post">{% csrf_token %}{{ form.non_field_errors }}<label for="id_username">Nombre de usuario</label><div class="login-input">{% include 'icon.html' with name='user' %}<input id="id_username" name="username" autocomplete="username" required autofocus value="{{ form.username.value|default:'' }}" placeholder="Ingresa tu usuario"></div>{{ form.username.errors }}<label for="id_password">Contraseña</label><div class="login-input">{% include 'icon.html' with name='lock' %}<input id="id_password" name="password" type="password" autocomplete="current-password" required placeholder="Ingresa tu contraseña"><button type="button" class="password-toggle" aria-label="Mostrar contraseña" aria-pressed="false">Mostrar</button></div>{{ form.password.errors }}<input type="hidden" name="next" value="{{ next }}"><button class="button full" type="submit">Ingresar →</button></form><small>{% include 'icon.html' with name='check' %}Utiliza las credenciales proporcionadas por tu administrador.</small></section></main><footer class="login-footer">CLARO PERÚ | {% now 'Y' %}</footer></body></html>
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="{% static 'img/icon.svg' %}">
+  <title>Inicia sesión · Portal Claro 4DX</title>
+  <link rel="stylesheet" href="{% static 'css/portal.css' %}?v=20261012-login-v2">
+  <link rel="stylesheet" href="{% static 'css/design.css' %}?v=20261012-login-v2">
+  <script src="{% static 'js/design.js' %}?v=20261012-login-v2" defer></script>
+</head>
+<body class="login-v2">
+  <div class="login-v2-scene" aria-hidden="true"></div>
+
+  <header class="login-v2-header">
+    <div class="claro-logo" aria-label="Claro">Claro<span aria-hidden="true"></span></div>
+    <span class="login-v2-divider" aria-hidden="true"></span>
+    <div class="login-v2-brand-copy">
+      <strong>Portal Claro</strong>
+      <span>Portal de Seguimiento 4DX</span>
+    </div>
+  </header>
+
+  <main class="login-v2-main">
+    <section class="login-v2-card" aria-labelledby="login-title">
+      <div class="login-v2-user" aria-hidden="true">{% include 'icon.html' with name='user' %}</div>
+      <h1 id="login-title">Inicia sesión</h1>
+      <p>Accede al Portal Claro – Portal de Seguimiento 4DX.</p>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="login-v2-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+
+        <label for="id_username">Usuario de acceso</label>
+        <div class="login-v2-input">
+          <input id="id_username" name="username" autocomplete="username" required autofocus
+                 value="{{ form.username.value|default:'' }}" placeholder="Ej. usuario.demo">
+        </div>
+        {% if form.username.errors %}<div class="login-v2-errors" role="alert">{{ form.username.errors }}</div>{% endif %}
+
+        <label for="id_password">Contraseña</label>
+        <div class="login-v2-input login-v2-password">
+          <input id="id_password" name="password" type="password" autocomplete="current-password" required
+                 placeholder="Ingresa tu contraseña">
+          <button type="button" class="password-toggle" aria-label="Mostrar contraseña" aria-pressed="false">
+            {% include 'icon.html' with name='eye' %}
+            <span class="password-toggle-label sr-only">Mostrar contraseña</span>
+          </button>
+        </div>
+        {% if form.password.errors %}<div class="login-v2-errors" role="alert">{{ form.password.errors }}</div>{% endif %}
+
+        <div class="login-v2-options">
+          <label class="login-v2-remember"><input type="checkbox" name="remember" value="1" {% if request.POST.remember %}checked{% endif %}> <span>Recordarme</span></label>
+          <details class="login-v2-recovery">
+            <summary>¿Olvidaste tu contraseña?</summary>
+            <div>Solicita al administrador 4DX el restablecimiento de tu acceso.</div>
+          </details>
+        </div>
+
+        <input type="hidden" name="next" value="{{ next }}">
+        <button class="login-v2-submit" type="submit">Iniciar sesión <span aria-hidden="true">→</span></button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
