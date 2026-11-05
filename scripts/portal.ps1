@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [ValidateSet("start", "stop", "restart", "status", "logs", "validate")]
@@ -13,6 +13,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
+if ($IsWindows -or $PSVersionTable.PSEdition -eq "Desktop") {
+    & chcp.com 65001 | Out-Null
+}
 [Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $OutputEncoding = [Console]::OutputEncoding

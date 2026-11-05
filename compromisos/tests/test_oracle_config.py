@@ -3,12 +3,14 @@ import base64
 import sys
 import types
 from datetime import date
+from io import StringIO
 
 import pytest
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
 from django.db.backends.oracle.base import DatabaseWrapper
+from django.db import connection
 from django.utils import timezone
 
 from config.database import database_config
@@ -194,6 +196,28 @@ def test_windows_server_starts_waitress_without_reexecuting_python(monkeypatch):
     run.serve_production()
 
     assert received == {"host": "0.0.0.0", "port": 8000, "threads": 8}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_migrate_keeps_unrelated_standard_ledger_when_portal_ledger_exists():
+    with connection.cursor() as cursor:
+        cursor.execute(
+            'CREATE TABLE "django_migrations" ('
+            '"id" integer NOT NULL PRIMARY KEY, '
+            '"app" varchar(255) NOT NULL, '
+            '"name" varchar(255) NOT NULL, '
+            '"applied" datetime NOT NULL)'
+        )
+    errors = StringIO()
+    try:
+        call_command("migrate", interactive=False, verbosity=0, stderr=errors)
+        tables = set(connection.introspection.table_names())
+        assert "registrodb_4dx" in tables
+        assert "django_migrations" in tables
+        assert "dejará la otra tabla intacta" in errors.getvalue()
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute('DROP TABLE "django_migrations"')
 
 
 @pytest.mark.django_db
