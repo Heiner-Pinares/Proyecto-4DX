@@ -47,7 +47,99 @@ python manage.py createsuperuser
 python run.py
 ```
 
-`run.py --check` inicializa sin iniciar el servidor. `python run.py` reintenta la conexión hasta 30 veces (2 segundos entre intentos), aplica las migraciones versionadas con `interactive=False`, inicializa roles y estados sin duplicarlos, recopila estáticos y arranca el servidor. Con `DEBUG=False` utiliza Gunicorn, con `DEBUG=True` el servidor de desarrollo de Django. No ejecuta `makemigrations` ni inserta demos al arrancar.
+`run.py --check` inicializa sin iniciar el servidor. `python run.py` reintenta la conexión hasta 30 veces (2 segundos entre intentos), aplica las migraciones versionadas con `interactive=False`, inicializa roles y estados sin duplicarlos, recopila estáticos y arranca el servidor. Con `DEBUG=False` utiliza Gunicorn en Linux/macOS y Waitress en Windows; con `DEBUG=True` utiliza el servidor de desarrollo de Django. No ejecuta `makemigrations` ni inserta demos al arrancar.
+
+## Producción en Windows con Waitress
+
+El controlador de Windows ejecuta siempre el portal con `DEBUG=False`, por lo que `run.py` usa **Waitress** y escucha en `0.0.0.0`. El puerto predeterminado es **8000** para conservar el comportamiento existente; se puede sustituir con `PORTAL_PORT` en `.env` o con `-Port` en cada comando. El método de desarrollo (`python manage.py runserver`) no cambia.
+
+En PowerShell, desde la raíz del repositorio, instala una sola vez:
+
+```powershell
+cd "D:\RUTA CON ESPACIOS\Proyecto-4DX"
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
+
+# Solo si aún no existe .env:
+Copy-Item .env.example .env
+```
+
+Completa la configuración real de base de datos en `.env` sin copiar secretos de otros portales. Para Oracle, la alternativa recomendada es crear `secrets\oracle_password.txt` con la contraseña como única línea y conceder lectura únicamente a la cuenta de servicio. No agregues ese archivo al repositorio. El controlador valida el entorno virtual, la configuración, la conexión a la base, las migraciones, los permisos de escritura, el puerto y los archivos estáticos antes de abrir Waitress.
+
+La operación diaria no requiere abrir PowerShell como administrador:
+
+```powershell
+.\scripts\portal.cmd start
+.\scripts\portal.cmd status
+.\scripts\portal.cmd logs
+.\scripts\portal.cmd restart
+.\scripts\portal.cmd stop
+```
+
+Para usar otro puerto en una ejecución:
+
+```powershell
+.\scripts\portal.cmd start -Port 8104
+.\scripts\portal.cmd status -Port 8104
+.\scripts\portal.cmd logs -Tail 150
+.\scripts\portal.cmd stop -Port 8104
+```
+
+Usa el mismo puerto en todos los comandos. `start` ejecuta `check`, comprueba la base de datos, aplica las migraciones versionadas, ejecuta `collectstatic`, verifica que el puerto esté libre e inicia Waitress sin mantener una consola abierta. `stop` lee el PID privado y compara el ejecutable y la ruta absoluta de `run.py` antes de detenerlo; si no coinciden, se niega a terminar el proceso. Así no detiene otros portales ni otros procesos Python.
+
+Los archivos de esta instancia son independientes:
+
+```text
+.runtime\windows-portal\portal.pid
+.runtime\windows-portal\portal.json
+.runtime\windows-portal\logs\portal.stdout.log
+.runtime\windows-portal\logs\portal.stderr.log
+staticfiles\
+```
+
+Las rutas se pueden cambiar mediante `PORTAL_RUNTIME_DIR` y `STATIC_ROOT`, incluso a rutas absolutas. No deben apuntar a carpetas usadas por otro portal; el controlador escribe un marcador de propietario y rechaza una carpeta marcada por otra instalación. La cuenta que arranca el proceso necesita lectura sobre el proyecto y secretos, y modificación sobre esas dos carpetas, `runtime-config` y, cuando se usa el correo SSH, `work`. Si `logs` no puede leer un archivo por permisos, muestra la ruta y un ejemplo de `icacls` sin ocultar el error original.
+
+### Inicio automático al encender Windows
+
+Abre **PowerShell como administrador** únicamente para registrar o actualizar la tarea programada y ejecuta:
+
+```powershell
+cd "D:\RUTA CON ESPACIOS\Proyecto-4DX"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\publicar_portal_windows.ps1" `
+  -ServiceAccount "DOMINIO\USUARIO" `
+  -PublicUrl "http://IP_DEL_SERVIDOR:8000" `
+  -Port 8000 `
+  -TaskName "Portal 4DX - Inicio automático" `
+  -AllowInternalHttp
+```
+
+El script solicita la contraseña con `Read-Host -AsSecureString`; no la muestra, imprime ni guarda en archivos. Antes de registrar la tarea ejecuta todas las validaciones. Después la inicia bajo la cuenta de servicio y comprueba que el proceso quede activo. Si la prueba falla, elimina la tarea nueva o restaura la definición anterior. Volver a ejecutar el mismo comando actualiza la tarea existente.
+
+`-AllowInternalHttp` confirma que la URL HTTP se usará solo dentro de la red interna. Para producción detrás de un proxy HTTPS, omite ese parámetro y usa la URL HTTPS:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\publicar_portal_windows.ps1" `
+  -ServiceAccount "DOMINIO\USUARIO" `
+  -PublicUrl "https://portal4dx.interno.claro" `
+  -Port 8000 `
+  -TaskName "Portal 4DX - Inicio automático"
+```
+
+En este segundo ejemplo el proxy recibe HTTPS en 443 y reenvía a Waitress en el puerto interno 8000. `PublicUrl` y `Port` pueden ser diferentes precisamente por ese motivo. Waitress no debe quedar accesible directamente desde Internet. El publicador no crea reglas de firewall. Si la política corporativa requiere abrir el puerto a la LAN, un administrador debe limitar la regla a la subred interna, por ejemplo:
+
+```powershell
+New-NetFirewallRule -DisplayName "Portal 4DX interno" -Direction Inbound `
+  -Protocol TCP -LocalPort 8000 -RemoteAddress LocalSubnet -Action Allow
+```
+
+Para una comprobación previa que no inicia el servidor:
+
+```powershell
+.\scripts\portal.cmd validate -Port 8000
+```
+
+Las advertencias de `check --deploy` se distinguen de los errores bloqueantes. Algunas son esperables durante una publicación HTTP interna; para acceso por proxy deben resolverse con cookies seguras, hosts explícitos y HTTPS.
 
 ## Ejecución con Docker
 
@@ -74,6 +166,10 @@ El contenedor de la aplicación se ejecuta como usuario sin privilegios. Usa un 
 | `DEBUG` | `False` en producción; `True` activa servidor de desarrollo y errores detallados. |
 | `SECRET_KEY` | Opcional; si falta se genera y conserva automáticamente. |
 | `ALLOWED_HOSTS` | Hosts permitidos, separados por comas. El arranque directo acepta cualquier host salvo que se restrinja aquí. |
+| `WEB_BIND_ADDRESS` | Dirección de escucha; `0.0.0.0` por defecto y obligatoria en el controlador de Windows. |
+| `PORTAL_PORT` | Puerto de Waitress/Gunicorn; 8000 por defecto. `-Port` tiene prioridad en el controlador. |
+| `STATIC_ROOT` | Carpeta exclusiva generada por `collectstatic`; `staticfiles` por defecto. |
+| `PORTAL_RUNTIME_DIR` | Carpeta exclusiva del PID, metadata y logs en Windows. |
 | `DB_ENGINE` | `oracle` en producción. |
 | `ORACLE_HOST`, `ORACLE_PORT` | Host SCAN y puerto; preparados como `scan-odscbio:1521`. |
 | `ORACLE_SERVICE_NAME` | Servicio Oracle; preparado como `ODSCBIO`. |
@@ -251,6 +347,9 @@ Antes de aceptar el despliegue, verificar en Oracle un esquema vacío, dos arran
 ├── .env.example, .gitignore, .dockerignore
 ├── Dockerfile, docker-compose.yml
 ├── README.md
+├── scripts/
+│   ├── portal.cmd, portal.ps1
+│   └── publicar_portal_windows.ps1
 ├── config/
 │   ├── settings.py, test_settings.py, urls.py, wsgi.py
 ├── compromisos/
@@ -295,7 +394,7 @@ El dominio no contiene campos exclusivos de PostgreSQL, arrays ni enums de ese m
 
 ## Operación y evolución
 
-Configura HTTPS, `DEBUG=False`, hosts y cookies seguras en producción. Mantén `.env` fuera del control de versiones. Los logs van a salida estándar: arranque, conexión, migraciones, identificadores de acciones, exportaciones y errores. No registran contraseñas ni contenidos de notas. Configura persistencia/rotación de logs y backups del motor en el despliegue.
+Configura HTTPS, `DEBUG=False`, hosts y cookies seguras en producción. Mantén `.env` fuera del control de versiones. En Windows el controlador guarda salida y errores en `.runtime/windows-portal/logs`; en otros despliegues los logs van a salida estándar. Incluyen arranque, conexión, migraciones, identificadores de acciones, exportaciones y errores, sin registrar contraseñas ni contenidos de notas. Configura rotación de logs y backups del motor según la política del servidor.
 
 SSO/Active Directory puede integrarse mediante un backend de autenticación Django que sincronice usuarios y grupos; los servicios siguen recibiendo el usuario autenticado. Quedan para fases posteriores los snapshots históricos reproducibles, la evaluación con cargas reales y la decisión de usar la última reprogramación sin límite como objetivo vigente.
 

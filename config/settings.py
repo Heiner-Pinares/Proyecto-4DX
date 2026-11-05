@@ -68,7 +68,10 @@ TIME_ZONE = "America/Lima"
 USE_I18N = True
 USE_TZ = True
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+_static_root = (os.getenv("STATIC_ROOT") or "staticfiles").strip()
+STATIC_ROOT = Path(_static_root)
+if not STATIC_ROOT.is_absolute():
+    STATIC_ROOT = BASE_DIR / STATIC_ROOT
 STATICFILES_DIRS = [BASE_DIR / "static"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "/login/"

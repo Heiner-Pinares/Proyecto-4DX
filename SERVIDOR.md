@@ -64,12 +64,33 @@ En Windows PowerShell:
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
-.\.venv\Scripts\python.exe run.py --check
 .\.venv\Scripts\python.exe manage.py createsuperuser
-.\.venv\Scripts\python.exe run.py
+.\scripts\portal.cmd validate
+.\scripts\portal.cmd start
+.\scripts\portal.cmd status
+.\scripts\portal.cmd logs
 ```
 
-`run.py` realiza automáticamente la verificación y las migraciones. Con `DEBUG=False` ejecuta Gunicorn en Linux y Waitress en Windows, ambos en `0.0.0.0:8000`. Administrar el proceso mediante systemd, Supervisor, un servicio de Windows o el mecanismo corporativo del servidor.
+`run.py` realiza automáticamente la verificación y las migraciones. Con `DEBUG=False` ejecuta Gunicorn en Linux y Waitress en Windows. En Windows, `scripts\portal.cmd` fuerza el modo de producción, usa `0.0.0.0`, controla exclusivamente el PID de esta instalación y conserva logs separados. El puerto predeterminado es 8000 y puede configurarse con `PORTAL_PORT` o `-Port`.
+
+Para detener o reiniciar:
+
+```powershell
+.\scripts\portal.cmd restart
+.\scripts\portal.cmd stop
+```
+
+El inicio automático se registra desde PowerShell **como administrador**:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\publicar_portal_windows.ps1" `
+  -ServiceAccount "DOMINIO\USUARIO" `
+  -PublicUrl "http://IP_DEL_SERVIDOR:8000" `
+  -Port 8000 `
+  -AllowInternalHttp
+```
+
+La contraseña se solicita de forma segura. La tarea se prueba con la cuenta indicada y se revierte si no puede arrancar. El procedimiento completo, las rutas de PID/logs/estáticos y el uso con proxy HTTPS están en `README.md`.
 
 ## HTTPS y URL pública
 
@@ -86,10 +107,10 @@ TRUST_PROXY_HTTPS=true
 SECURE_HSTS_SECONDS=31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS=false
 SECURE_HSTS_PRELOAD=false
-WEB_BIND_ADDRESS=127.0.0.1
+WEB_BIND_ADDRESS=0.0.0.0
 ```
 
-El proxy debe reemplazar `X-Forwarded-Proto` con el protocolo real, conservar `Host` y ser el único que alcance el puerto 8000. `ALLOWED_HOSTS` no lleva protocolo. `PORTAL_PUBLIC_URL` y `CSRF_TRUSTED_ORIGINS` sí. `PORTAL_PUBLIC_URL` es opcional: si se omite, el enlace de Teams se obtiene de la solicitud HTTPS recibida.
+El proxy debe reemplazar `X-Forwarded-Proto` con el protocolo real, conservar `Host` y ser el único que alcance el puerto 8000. Limita ese puerto con el firewall a la red interna o a la dirección del proxy; no lo publiques directamente en Internet. `ALLOWED_HOSTS` no lleva protocolo. `PORTAL_PUBLIC_URL` y `CSRF_TRUSTED_ORIGINS` sí. `PORTAL_PUBLIC_URL` es opcional: si se omite, el enlace de Teams se obtiene de la solicitud HTTPS recibida.
 
 ## Trasladar los datos actuales
 

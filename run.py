@@ -1,5 +1,6 @@
 """Arranque idempotente: conexión, migraciones versionadas e inicialización."""
 
+import argparse
 import logging
 import os
 import sys
@@ -17,15 +18,49 @@ from config.settings import flag
 log = logging.getLogger(__name__)
 
 
-def serve_production():
+def positive_port(value):
+    """Valida un puerto TCP recibido por argumento o variable de entorno."""
+    try:
+        port = int(value)
+    except (TypeError, ValueError) as error:
+        raise argparse.ArgumentTypeError("el puerto debe ser un número") from error
+    if not 1 <= port <= 65535:
+        raise argparse.ArgumentTypeError("el puerto debe estar entre 1 y 65535")
+    return port
+
+
+def command_line(argv=None):
+    parser = argparse.ArgumentParser(description="Inicializa y ejecuta el Portal 4DX")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="verifica e inicializa el portal sin abrir el servidor web",
+    )
+    parser.add_argument(
+        "--host",
+        default=os.getenv("WEB_BIND_ADDRESS", "0.0.0.0"),
+        help="dirección de escucha (WEB_BIND_ADDRESS; 0.0.0.0 por defecto)",
+    )
+    parser.add_argument(
+        "--port",
+        type=positive_port,
+        default=positive_port(os.getenv("PORTAL_PORT", os.getenv("PORT", "8000"))),
+        help="puerto HTTP (PORTAL_PORT o PORT; 8000 por defecto)",
+    )
+    return parser.parse_args(argv)
+
+
+def serve_production(host=None, port=None):
     """Usa un servidor WSGI compatible con el sistema operativo."""
+    host = host or os.getenv("WEB_BIND_ADDRESS", "0.0.0.0")
+    port = positive_port(port or os.getenv("PORTAL_PORT", os.getenv("PORT", "8000")))
     if os.name == "nt":
         # Ejecutar dentro del proceso evita que Windows divida rutas con espacios.
         from waitress import serve
         from config.wsgi import application
 
-        log.info("Portal disponible en http://0.0.0.0:8000")
-        serve(application, host="0.0.0.0", port=8000, threads=8)
+        log.info("Portal disponible en http://%s:%s", host, port)
+        serve(application, host=host, port=port, threads=8)
         return
     os.execv(
         sys.executable,
@@ -35,7 +70,7 @@ def serve_production():
             "gunicorn",
             "config.wsgi:application",
             "--bind",
-            "0.0.0.0:8000",
+            f"{host}:{port}",
             "--workers",
             "2",
         ],
@@ -72,10 +107,11 @@ def initialize():
 
 
 if __name__ == "__main__":
+    args = command_line()
     initialize()
-    if "--check" not in sys.argv:
+    if not args.check:
         call_command("collectstatic", interactive=False, verbosity=0)
         if flag("DEBUG"):
-            call_command("runserver", "0.0.0.0:8000", use_reloader=False)
+            call_command("runserver", f"{args.host}:{args.port}", use_reloader=False)
         else:
-            serve_production()
+            serve_production(args.host, args.port)
