@@ -157,7 +157,7 @@ class ValidadorLDAP:
             )
         except DominioNoDisponible:
             raise
-        except (LDAPException, OSError, ssl.SSLError) as exc:
+        except (LDAPException, OSError, ssl.SSLError, ValueError) as exc:
             log.warning("Active Directory no disponible: %s", type(exc).__name__)
             raise DominioNoDisponible(type(exc).__name__) from None
         finally:

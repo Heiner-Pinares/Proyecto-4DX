@@ -1,5 +1,6 @@
 Django>=5.2,<5.3
 ldap3>=2.9,<3
+pycryptodome>=3.21,<4
 oracledb>=2.3
 python-dotenv>=1,<2
 openpyxl>=3.1,<4

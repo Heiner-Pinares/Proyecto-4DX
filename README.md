@@ -63,6 +63,12 @@ usar `starttls` o `ldaps` cuando TI entregue el certificado raíz y guardar su
 ruta en `LDAP_CA_CERT`. Un correo corporativo puede utilizarse después del primer
 ingreso con código, cuando el portal ya conoce la relación entre correo y código.
 
+La autenticación NTLM requiere `pycryptodome`, porque las versiones actuales de
+Python/OpenSSL en Windows no siempre incluyen MD4. Está fijado en
+`requirements.lock.txt`; después de actualizar el repositorio siempre se debe
+reinstalar ese archivo antes de reiniciar el portal. La validación de arranque
+detiene la publicación con un mensaje claro si falta esta dependencia.
+
 ## Instalación con Oracle sin Docker
 
 1. Instala Python 3.12. Oracle Instant Client no es necesario porque `python-oracledb` usa modo Thin.

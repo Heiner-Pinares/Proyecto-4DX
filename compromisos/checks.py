@@ -19,6 +19,16 @@ def comprobar_directorio(app_configs, **kwargs):
                 id="compromisos.E001",
             )
         )
+    try:
+        from Crypto.Hash import MD4  # noqa: F401
+    except ImportError:
+        resultados.append(
+            Error(
+                "Falta pycryptodome; Python no puede calcular la respuesta NTLM requerida por LDAP.",
+                hint="Instala requirements.lock.txt dentro del entorno virtual.",
+                id="compromisos.E004",
+            )
+        )
     if not settings.LDAP_HOST or not settings.LDAP_DOMINIO_NETBIOS or not settings.LDAP_BASE_DN:
         resultados.append(
             Error(
