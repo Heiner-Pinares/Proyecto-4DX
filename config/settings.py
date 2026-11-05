@@ -63,6 +63,10 @@ AUTH_PASSWORD_VALIDATORS = [
         "NumericPasswordValidator",
     ]
 ]
+AUTHENTICATION_BACKENDS = [
+    "compromisos.domain_auth.ClaroDirectoryBackend",
+    "compromisos.domain_auth.PortalLocalBackend",
+]
 LANGUAGE_CODE = "es-pe"
 TIME_ZONE = "America/Lima"
 USE_I18N = True
@@ -77,6 +81,22 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/login/"
+# Active Directory de Claro. Los códigos C/E usan exclusivamente este origen;
+# las demás cuentas conservan la autenticación local con hash de Django.
+DOMINIOS_CORREO_CLARO = {
+    value.strip().casefold()
+    for value in os.getenv("DOMINIOS_CORREO_CLARO", "claro.com.pe").split(",")
+    if value.strip()
+}
+LDAP_HOST = os.getenv("LDAP_HOST", "claro.pe").strip()
+LDAP_DOMINIO_NETBIOS = os.getenv("LDAP_DOMINIO_NETBIOS", "CLARO").strip()
+LDAP_BASE_DN = os.getenv("LDAP_BASE_DN", "dc=claro,dc=pe").strip()
+LDAP_MODO = os.getenv("LDAP_MODO", "plano").strip().lower()
+if LDAP_MODO not in {"plano", "starttls", "ldaps"}:
+    raise ValueError("LDAP_MODO debe ser plano, starttls o ldaps.")
+LDAP_CA_CERT = os.getenv("LDAP_CA_CERT", "").strip()
+LDAP_TIMEOUT_CONEXION = int(os.getenv("LDAP_TIMEOUT_CONEXION", "5"))
+LDAP_TIMEOUT_RESPUESTA = int(os.getenv("LDAP_TIMEOUT_RESPUESTA", "10"))
 CLOSED_STATUS_CODE = os.getenv("CLOSED_STATUS_CODE", "T")
 PENDING_STATUS_CODE = "EC"
 IN_PROGRESS_STATUS_CODE = "EC"

@@ -26,7 +26,7 @@
         <label for="id_username">Usuario de acceso</label>
         <div class="login-v2-input">
           <input id="id_username" name="username" autocomplete="username" required autofocus
-                 value="{{ form.username.value|default:'' }}" placeholder="Ej. usuario.demo">
+                 value="{{ form.username.value|default:'' }}" placeholder="Código C/E o usuario local">
         </div>
         {% if form.username.errors %}<div class="login-v2-errors" role="alert">{{ form.username.errors }}</div>{% endif %}
 
@@ -45,7 +45,7 @@
           <label class="login-v2-remember"><input type="checkbox" name="remember" value="1" {% if request.POST.remember %}checked{% endif %}> <span>Recordarme</span></label>
           <details class="login-v2-recovery">
             <summary>¿Olvidaste tu contraseña?</summary>
-            <div>Solicita al administrador 4DX el restablecimiento de tu acceso.</div>
+            <div>Si usas código C/E, utiliza el procedimiento corporativo para recuperar tu clave de Windows. Para una cuenta local, solicita el restablecimiento al administrador 4DX.</div>
           </details>
         </div>
 

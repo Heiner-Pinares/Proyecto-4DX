@@ -27,6 +27,42 @@ Abre http://localhost:8000 e ingresa con tu usuario existente (`prueba`) y la co
 
 Desde **Usuarios**, el administrador puede crear cuentas, asignar roles, editar datos, desactivar accesos y cambiar contraseñas. No necesita usar Django Admin como interfaz cotidiana.
 
+## Inicio de sesión corporativo
+
+Los códigos corporativos con formato `C12345` o `E12345` validan su contraseña
+directamente contra el Active Directory de Claro mediante LDAP/NTLM. El portal
+no guarda esa contraseña ni su hash: después de una validación correcta obtiene
+del directorio nombres, apellidos y correo, y los sincroniza en la tabla
+`usuarios_4dx`. El área, gerencia, dirección y jefe ya registrados se conservan
+en el perfil de `registros_portal4dx`.
+
+Si el código ya existe, conserva sus grupos y permisos. Si es su primer ingreso,
+el portal crea la fila en `usuarios_4dx` y le asigna el grupo `Consulta`. El
+administrador puede cambiarlo posteriormente a `Editor` o `Administrador`. Los
+usuarios cuyo identificador no sea un código C/E ni un correo de Claro continúan
+usando su contraseña local con hash de Django.
+
+Al publicar esta versión, las sesiones abiertas con el backend anterior se
+cierran una sola vez y las personas deben volver a iniciar sesión. Esto impide
+que un código C/E conserve accidentalmente una vía de acceso mediante una
+contraseña local antigua. La pantalla de Usuarios tampoco ofrece restablecer la
+contraseña de una cuenta C/E, porque esa clave pertenece al dominio corporativo.
+
+La configuración predeterminada replica el directorio corporativo conocido:
+
+```dotenv
+LDAP_HOST=claro.pe
+LDAP_DOMINIO_NETBIOS=CLARO
+LDAP_BASE_DN=dc=claro,dc=pe
+LDAP_MODO=plano
+DOMINIOS_CORREO_CLARO=claro.com.pe
+```
+
+`LDAP_MODO=plano` conserva la compatibilidad actual de la red. Para producción,
+usar `starttls` o `ldaps` cuando TI entregue el certificado raíz y guardar su
+ruta en `LDAP_CA_CERT`. Un correo corporativo puede utilizarse después del primer
+ingreso con código, cuando el portal ya conoce la relación entre correo y código.
+
 ## Instalación con Oracle sin Docker
 
 1. Instala Python 3.12. Oracle Instant Client no es necesario porque `python-oracledb` usa modo Thin.

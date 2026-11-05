@@ -27,7 +27,7 @@
             <td>{{ u.perfil_4dx.gerencia|default:'—' }}<small>{{ u.perfil_4dx.direccion|default:'—' }}</small></td>
             <td>{{ u.perfil_4dx.jefe|default:'—' }}</td>
             <td>{% for g in u.groups.all %}{{ g.name }} {% endfor %}{% if u.is_superuser %}Superusuario{% endif %}</td>
-            <td><a href="{% url 'usuario_editar' u.pk %}">Editar</a> · <a href="{% url 'usuario_password' u.pk %}">Contraseña</a><small>{% if u.is_active %}Activo{% else %}Inactivo{% endif %}</small></td>
+            <td><a href="{% url 'usuario_editar' u.pk %}">Editar</a>{% if not u.es_corporativo_4dx %} · <a href="{% url 'usuario_password' u.pk %}">Contraseña</a>{% endif %}<small>{% if u.is_active %}Activo{% else %}Inactivo{% endif %}{% if u.es_corporativo_4dx %} · Dominio Claro{% endif %}</small></td>
           </tr>
           {% empty %}
           <tr><td colspan="6" class="empty">No se encontraron usuarios con “{{ q }}”.</td></tr>

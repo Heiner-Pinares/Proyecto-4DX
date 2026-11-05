@@ -54,6 +54,7 @@ class PortalCompromisosConfig(AppConfig):
     name = "compromisos"
 
     def ready(self):
+        from compromisos import checks  # noqa: F401
         # Django's migration recorder is not a normal migrated application model.
         from django.db.migrations.recorder import MigrationRecorder
         MigrationRecorder.Migration._meta.db_table = "registrodb_4dx"

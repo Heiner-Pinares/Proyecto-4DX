@@ -32,7 +32,7 @@ def test_only_ten_physical_tables():
 def test_session_compatibility_logout_race_and_expiry(client):
     user = User.objects.create_user('legacy', password='password-test')
     key = 'a'*32
-    data = {'_auth_user_id':str(user.pk), '_auth_user_backend':'django.contrib.auth.backends.ModelBackend', '_auth_user_hash':user.get_session_auth_hash()}
+    data = {'_auth_user_id':str(user.pk), '_auth_user_backend':'compromisos.domain_auth.PortalLocalBackend', '_auth_user_hash':user.get_session_auth_hash()}
     R.sesiones.create(session_key=key, session_data=OldStore().encode(data), expire_date=timezone.now()+timedelta(days=1))
     client.cookies['sessionid'] = key
     assert client.get('/compromisos/').status_code == 200

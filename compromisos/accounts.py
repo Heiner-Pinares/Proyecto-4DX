@@ -7,6 +7,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import EventoCompromiso
+from .domain_auth import es_identificador_corporativo
 from .permissions import require
 from .profiles import profile_data, profiles_for, save_profile
 
@@ -88,6 +89,7 @@ def usuarios(request):
     profiles = profiles_for(users)
     for user in users:
         user.perfil_4dx = profiles[user.pk]
+        user.es_corporativo_4dx = es_identificador_corporativo(user.username)
     query = request.GET.get("q", "").strip()
     if query:
         needle = query.casefold()
@@ -157,6 +159,12 @@ def usuario_editar(request, pk):
 def password(request, pk):
     require(request.user, administrative=True)
     target = get_object_or_404(User, pk=pk)
+    if es_identificador_corporativo(target.username):
+        messages.info(
+            request,
+            "La contraseña de un código C/E se administra en el dominio corporativo, no en el portal.",
+        )
+        return redirect("usuarios")
     if target.is_superuser and not request.user.is_superuser:
         from django.core.exceptions import PermissionDenied
 
