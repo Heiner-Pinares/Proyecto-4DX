@@ -1,16 +1,30 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count
-from django.http import Http404, HttpResponse
+from django.db.models import Count, Q
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from .forms import AccionForm, CompromisoForm
+from .executive import (
+    antiguedad_vencidos,
+    datos_corte,
+    evolucion_cortes,
+    historico_mensual,
+    opciones_corte,
+    opciones_periodo,
+    resolver_corte,
+    ultimo_viernes,
+    vencimientos_siguientes,
+)
 from .indicators import agrupados, evolucion_mensual, metricas
 from .models import Compromiso, EventoCompromiso
 from .permissions import require
@@ -52,17 +66,25 @@ def pagina(request, qs):
 @login_required
 def dashboard(request):
     qs = filtrar(request.GET)
+    today = timezone.localdate()
+    cut = resolver_corte(request.GET.get("corte"), today)
+    executive = datos_corte(qs, cut)
+    for item in executive["overdue"]:
+        item.cut_days = (cut - item.fecha_objetivo_vigente).days
+    for item in executive["upcoming"]:
+        item.cut_days = (item.fecha_objetivo_vigente - cut).days
+    for item in executive["standby"]:
+        event = item.historial.filter(accion="STAND BY").order_by("-fecha").first()
+        since = timezone.localtime(event.fecha).date() if event else item.updated_at.date()
+        item.standby_days = max((today - since).days, 0)
     ctx = {
-        "title": "Tu avance en un vistazo",
+        "title": "Resumen ejecutivo del corte",
         "k": metricas(qs),
-        "proximos": qs.filter(situacion="Por vencer").order_by("objetivo")[:8],
-        "vencidos": qs.filter(situacion="Vencido").order_by("objetivo")[:8],
-        "today": timezone.localdate(),
+        "today": today,
+        "cut": cut,
+        "cut_options": opciones_corte(today),
+        "executive": executive,
     }
-    attention = list(qs.filter(situacion__in=["Por vencer", "Vencido"]).order_by("objetivo")[:10])
-    for item in attention:
-        item.dias = (item.objetivo - ctx["today"]).days
-    ctx["atencion"] = attention
     return render(request, "dashboard.html", ctx)
 
 
@@ -70,14 +92,53 @@ def dashboard(request):
 def listado(request):
     from .grid import COLUMNS, fila
 
-    qs = filtrar(request.GET)
+    filtered = filtrar(request.GET)
+    today = timezone.localdate()
+    next_cut = ultimo_viernes(today) + timedelta(days=7)
+    view = request.GET.get("vista", "accion")
+    if view not in {"accion", "proximo", "todos", "terminados"}:
+        view = "accion"
+    action_filter = Q(estatus__in=["D", "S"]) | Q(situacion__in=["Vencido", "Por vencer"])
+    view_counts = {
+        "accion": filtered.filter(action_filter).count(),
+        "proximo": filtered.filter(suspendida=False, fecha_real__isnull=True, objetivo__gt=today, objetivo__lte=next_cut).count(),
+        "todos": filtered.count(),
+        "terminados": filtered.filter(estatus="T").count(),
+    }
+    qs = filtered
+    if view == "accion":
+        qs = qs.filter(action_filter)
+    elif view == "proximo":
+        qs = qs.filter(suspendida=False, fecha_real__isnull=True, objetivo__gt=today, objetivo__lte=next_cut)
+    elif view == "terminados":
+        qs = qs.filter(estatus="T")
     sort = request.GET.get("orden", "-created_at")
     sortable = {"jefatura", "proyecto", "responsable_pyp", "tarea", "fecha_de_compromiso", "primera_fecha", "segunda_fecha", "tercera_fecha", "created_at", "puntaje", "estatus"}
     if sort.lstrip("-") not in sortable:
         sort = "-created_at"
-    qs = qs.order_by(sort, "id")
+    qs = qs.order_by(sort, "id").prefetch_related("eventos")
     page = pagina(request, qs)
     rows = [fila(c) for c in page["page_obj"]]
+    commitments = list(page["page_obj"])
+    for commitment in commitments:
+        commitment.reprogram_count = commitment.reprogramaciones.count()
+        commitment.days_to_due = (commitment.objetivo - today).days if commitment.objetivo else None
+        commitment.initials = "".join(part[:1] for part in commitment.responsable_pyp.split()[:2]).upper() or "—"
+    selected_id = request.GET.get("seleccion", "")
+    selected = next((item for item in commitments if str(item.pk) == selected_id), None)
+    if selected is None:
+        selected = commitments[0] if commitments else None
+
+    tab_urls = {}
+    for key in view_counts:
+        params = request.GET.copy()
+        params["vista"] = key
+        params.pop("page", None)
+        params.pop("seleccion", None)
+        tab_urls[key] = f"{reverse('listado')}?{params.urlencode()}"
+    selection_params = request.GET.copy()
+    selection_params.pop("seleccion", None)
+    selection_query = selection_params.urlencode()
 
     return render(
         request,
@@ -86,14 +147,37 @@ def listado(request):
             "title": "Compromisos",
             **filtros(request),
             **page,
-            "k": metricas(qs),
+            "k": metricas(filtered),
             "columns": [{"name": n, "label": l, "kind": k} for n, l, k in COLUMNS],
             "rows": rows,
+            "commitments": commitments,
+            "selected": selected,
+            "vista": view,
+            "view_counts": view_counts,
+            "tab_urls": tab_urls,
+            "selection_query": selection_query,
+            "next_cut": next_cut,
+            "today": today,
             "grid_options": list(
                 EventoCompromiso.estados.filter(activo=True, codigo__in=["EC", "S", "T", "D"]).values("codigo", "nombre")
             ),
         },
     )
+
+
+@login_required
+@require_POST
+def comentario_rapido(request, pk):
+    require(request.user, edit=True)
+    try:
+        operar(pk, "nota", {"motivo": request.POST.get("motivo", "")}, request.user)
+        messages.success(request, "Comentario guardado correctamente.")
+    except ValidationError as error:
+        messages.error(request, "; ".join(error.messages))
+    target = request.POST.get("next", "")
+    if not target or not url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        target = f"{reverse('listado')}?seleccion={pk}"
+    return HttpResponseRedirect(target)
 
 
 @login_required
@@ -219,6 +303,18 @@ def papelera(request):
 @login_required
 def indicadores(request):
     qs = filtrar(request.GET)
+    today = timezone.localdate()
+    indicator_view = request.GET.get("vista", "gestion")
+    if indicator_view not in {"gestion", "historico"}:
+        indicator_view = "gestion"
+    cut = resolver_corte(request.GET.get("corte"), today)
+    if indicator_view == "historico" and not request.GET.get("corte"):
+        cut = today
+    executive = datos_corte(qs, cut)
+    weekly = evolucion_cortes(qs, cut)
+    upcoming_cuts = vencimientos_siguientes(qs, cut)
+    overdue_age = antiguedad_vencidos(qs, cut)
+    historical = historico_mensual(qs, end_date=cut)
     evolucion = evolucion_mensual(qs)
     k = metricas(qs)
     responsables = agrupados(qs, "responsable_pyp")
@@ -352,6 +448,14 @@ def indicadores(request):
             "responsables": responsables,
             "charts": charts,
             "evolucion": evolucion,
+            "vista": indicator_view,
+            "cut": cut,
+            "cut_options": opciones_periodo(today) if indicator_view == "historico" else opciones_corte(today),
+            "executive": executive,
+            "weekly": weekly,
+            "upcoming_cuts": upcoming_cuts,
+            "overdue_age": overdue_age,
+            "historical": historical,
             **filtros(request),
         },
     )

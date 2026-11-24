@@ -1,7 +1,64 @@
-{% extends 'base.html' %}{% block eyebrow %}RESUMEN{% endblock %}{% block content %}<p class="intro">Aquí puedes ver el estado general de tus compromisos 4DX y los más críticos que requieren atención.</p>
-<div class="overview-cards"><article class="summary-card"><span class="eyebrow">CUMPLIMIENTO GENERAL</span><strong>{{ k.cumplimiento_fechas|floatformat:1|default:'—' }} %</strong><progress max="100" value="{{ k.cumplimiento_fechas|default_if_none:0|floatformat:'2u' }}" aria-label="Cumplimiento general"></progress><p>De {{ k.total }} compromisos</p><small>Promedio de cierres 100 / 80 / 60, sin registros en Stand By.</small></article>
-{% include 'metric_card.html' with icon='calendar' label='TERMINADOS' value=k.terminados percent=k.terminados_porcentaje note='Avance registrado' color='cyan' url='?status=T' %}
-{% include 'metric_card.html' with icon='clock' label='VENCIDOS' value=k.vencidos percent=k.vencidos_porcentaje note='Requieren atención' color='red' url='?situacion=Vencido' %}
-{% include 'metric_card.html' with icon='calendar' label='POR VENCER' value=k.proximos percent=k.proximos_porcentaje note='Próximos días' color='pink' url='?situacion=Por+vencer' %}
-{% include 'metric_card.html' with icon='pause' label='STAND BY' value=k.suspendidos percent=k.suspendidos_porcentaje note='Compromisos en pausa' color='purple' url='?status=S' %}</div>
-<section class="panel attention-panel"><div class="panel-heading"><div><h2>{% include 'icon.html' with name='warning' %}Compromisos próximos a vencer o vencidos</h2><p>Revisa y toma acción sobre los compromisos que requieren atención.</p></div><a class="button secondary" href="{% url 'listado' %}">Ver todos →</a></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Compromiso</th><th>Responsable</th><th>Fecha de vencimiento</th><th>Días restantes</th><th>Situación</th><th>Acción</th></tr></thead><tbody>{% for c in atencion %}<tr><td>C-{{ c.pk|stringformat:'04d' }}</td><td>{{ c.tarea }}</td><td>{{ c.responsable_pyp }}</td><td>{{ c.objetivo|date:'d/m/Y' }}</td><td><span class="badge" data-status="{{ c.situacion }}">{{ c.dias }}</span></td><td><span class="badge" data-status="{{ c.situacion }}">{{ c.situacion }}</span></td><td><a href="{% url 'detalle' c.pk %}" aria-label="Ver compromiso {{ c.pk }}">→</a></td></tr>{% empty %}<tr><td colspan="7" class="empty">No hay compromisos vencidos ni próximos a vencer.</td></tr>{% endfor %}</tbody></table></div></section><details class="more-metrics"><summary>Ver todas las métricas de gestión</summary>{% include 'kpis.html' %}</details>{% endblock %}
+{% extends 'base.html' %}
+{% block heading_actions %}
+<form method="get" class="cut-selector">
+  <label for="dashboard-cut">Corte</label>
+  <select id="dashboard-cut" name="corte" data-auto-submit>
+    {% for option in cut_options %}<option value="{{ option.value }}" {% if option.value == cut.isoformat %}selected{% endif %}>{{ option.label }}</option>{% endfor %}
+  </select>
+</form>
+{% endblock %}
+{% block content %}
+<section class="cut-summary panel">
+  <div class="cut-score">
+    <span>Cumplimiento del corte</span>
+    <strong>{{ executive.compliance|floatformat:0 }}<small>%</small></strong>
+    <p class="delta {% if executive.variation < 0 %}negative{% else %}positive{% endif %}">{% if executive.variation < 0 %}▼{% else %}▲{% endif %} {{ executive.variation|floatformat:0 }} pp vs. corte anterior ({{ executive.previous_compliance|floatformat:0 }} %)</p>
+  </div>
+  <div class="cut-progress">
+    <b>{{ executive.on_time_count }} de {{ executive.due_count }} cerrados a tiempo</b>
+    <div class="progress-track"><span style="width:{{ executive.compliance|stringformat:'g' }}%"></span></div>
+    <small>Meta 95 %</small>
+  </div>
+  <a href="{% url 'indicadores' %}?corte={{ cut|date:'Y-m-d' }}">Ver detalle del corte →</a>
+</section>
+<p class="cut-changes">Desde el corte anterior: <b>+{{ executive.newly_overdue }} vencidos</b> · {{ executive.closed_since }} cerrados · {{ executive.rescheduled }} reprogramados</p>
+
+<div class="executive-alerts">
+  <article class="alert-card overdue-card">
+    <h2>Vencidos</h2><strong>{{ executive.overdue|length }}</strong>
+    <div class="alert-items">
+      {% for c in executive.overdue|slice:':3' %}<a href="{% url 'detalle' c.pk %}"><span>{{ c.tarea }}</span><small>{{ c.responsable_pyp }} · <b>+{{ c.cut_days }} días</b></small></a>{% empty %}<p class="empty">No hay compromisos vencidos en este corte.</p>{% endfor %}
+    </div>
+    <a class="card-link" href="{% url 'listado' %}?vista=accion&situacion=Vencido">Ver todos →</a>
+  </article>
+
+  <article class="alert-card upcoming-card">
+    <h2>Vencen antes del próximo corte · {{ executive.next_cut|date:'d M' }}</h2><strong>{{ executive.upcoming|length }}</strong>
+    <div class="alert-items">
+      {% for c in executive.upcoming|slice:':3' %}<a href="{% url 'detalle' c.pk %}"><span>{{ c.tarea }}</span><small>{{ c.responsable_pyp }} · <b>{{ c.fecha_objetivo_vigente|date:'D d' }}</b></small></a>{% empty %}<p class="empty">No hay vencimientos para el próximo corte.</p>{% endfor %}
+    </div>
+  </article>
+
+  <article class="alert-card decision-card">
+    <h2>Decisiones pendientes</h2><strong>{{ executive.standby|length }}</strong>
+    {% with c=executive.standby.0 %}{% if c %}
+      <p><b>{{ c.tarea }}</b> — en Stand By hace {{ c.standby_days }} días — responsable {{ c.responsable_pyp }}</p>
+      <small>Sin avance desde {{ c.updated_at|date:'d M' }}</small>
+      <div class="actions">{% if can_edit %}<a class="button secondary" href="{% url 'accion' c.pk 'reactivar' %}">Reactivar</a>{% endif %}<a class="button secondary muted-button" href="{% url 'detalle' c.pk %}">Ver detalle</a></div>
+    {% else %}<p class="empty">No hay compromisos en Stand By.</p>{% endif %}{% endwith %}
+  </article>
+</div>
+
+<section class="executive-offices">
+  <h2>Jefaturas</h2>
+  <div class="panel table-wrap"><table>
+    <thead><tr><th>Semáforo</th><th>Jefatura</th><th>Vencidos</th><th>Vencen {{ executive.next_cut|date:'d M' }}</th><th>Cumplimiento del corte</th><th>Motivo</th><th></th></tr></thead>
+    <tbody>{% for office in executive.offices %}<tr>
+      <td><span class="traffic {{ office.tone }}"></span></td>
+      <td>{{ office.name }}</td><td>{{ office.overdue }}</td><td>{{ office.upcoming }}</td>
+      <td><b>{{ office.compliance|floatformat:0 }} % ({{ office.on_time }}/{{ office.due }})</b><div class="mini-progress {{ office.tone }}"><span style="width:{{ office.compliance|stringformat:'g' }}%"></span></div></td>
+      <td>{{ office.reason }}</td><td><a href="{% url 'listado' %}?jefatura={{ office.value|urlencode }}">→</a></td>
+    </tr>{% empty %}<tr><td colspan="7" class="empty">No hay datos para los filtros seleccionados.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endblock %}

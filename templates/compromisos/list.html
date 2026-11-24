@@ -1,18 +1,74 @@
 {% extends 'base.html' %}{% load static %}
-{% block heading_actions %}<div class="actions"><a class="button secondary" href="{% url 'exportar' 'xlsx' %}?{{ request.GET.urlencode }}">↓ Exportar Excel</a>{% if can_edit %}<a class="button" href="{% url 'nuevo' %}">＋ Nuevo compromiso</a>{% endif %}</div>{% endblock %}
+{% block heading_actions %}<div class="actions"><a class="button secondary" href="{% url 'exportar' 'xlsx' %}?{{ request.GET.urlencode }}">Exportar</a>{% if can_edit %}<a class="button primary-dark" href="{% url 'nuevo' %}">＋ Nuevo</a>{% endif %}</div>{% endblock %}
 {% block content %}
-<p class="intro">Consulta los compromisos de la gerencia. Filtra por proyecto, jefatura o responsable y mantén al día las fechas y avances.</p><div class="sheet-help"><div><b>Hoja de compromisos</b><p>{% if can_edit %}Haz clic en una celda para editar. Enter guarda · Tab guarda y avanza · Esc cancela.{% else %}Vista de consulta. Tu rol permite leer y exportar la información.{% endif %}</p></div><span id="save-status" role="status" aria-live="polite">Todos los cambios guardados</span></div>
-{% include 'filters.html' %}
-<div class="list-metrics"><article class="cyan"><span>Total de compromisos</span><strong>{{ k.total }}</strong></article><article class="cyan"><span>En curso</span><strong>{{ k.proceso }}</strong><small>{{ k.proceso_porcentaje|floatformat:1 }} %</small></article><article class="green"><span>Terminados</span><strong>{{ k.terminados }}</strong><small>{{ k.terminados_porcentaje|floatformat:1 }} %</small></article><article class="red"><span>Demorados / Vencidos</span><strong>{{ k.vencidos }}</strong><small>{{ k.vencidos_porcentaje|floatformat:1 }} %</small></article><article class="gray"><span>Stand By</span><strong>{{ k.suspendidos }}</strong><small>{{ k.suspendidos_porcentaje|floatformat:1 }} %</small></article></div><div class="score-legend"><b>Cumplimiento automático</b><span class="score-chip score-100">100 % · Primera fecha</span><span class="score-chip score-80">80 % · Segunda fecha</span><span class="score-chip score-60">60 % · Tercera o resto</span><span>Sin fecha real: —</span></div>
-<section class="panel spreadsheet-panel">
-<div class="spreadsheet-scroll" tabindex="0" aria-label="Tabla de compromisos, desplaza horizontalmente para ver las fechas">
-<table class="spreadsheet" id="commitment-sheet">
-  <thead><tr><th class="row-index">N.º</th>{% for col in columns %}{% if col.kind != 'comments' %}<th data-column="{{ col.name }}" class="col-{{ col.name }}">{{ col.label }}{% if col.kind == 'readonly' %}<small>Automático</small>{% endif %}</th>{% endif %}{% endfor %}<th>Detalle</th>{% for col in columns %}{% if col.kind == 'comments' %}<th data-column="{{ col.name }}" class="col-{{ col.name }}">{{ col.label }}</th>{% endif %}{% endfor %}</tr></thead>
-  <tbody>{% for row in rows %}<tr data-id="{{ row.id }}" data-version="{{ row.version }}" data-url="{% url 'celda' row.id %}"><th class="row-index">{{ row.id }}</th>{% for cell in row.cells %}{% if cell.kind != 'comments' %}<td data-field="{{ cell.name }}" data-kind="{{ cell.kind }}" {% if cell.name == 'status' %}data-status="{{ cell.value }}"{% endif %} class="col-{{ cell.name }} {% if not cell.editable %}computed{% endif %}">{% if cell.editable and can_edit %}<button type="button" class="cell-value" aria-label="Editar {{ cell.label }} del compromiso {{ row.id }}">{{ cell.display }}</button>{% else %}<span class="cell-display">{{ cell.display }}</span>{% endif %}</td>{% endif %}{% endfor %}<td><a href="{% url 'detalle' row.id %}" class="detail-link">Ver ↗</a></td>{% for cell in row.cells %}{% if cell.kind == 'comments' %}<td data-field="{{ cell.name }}" data-kind="{{ cell.kind }}" class="col-{{ cell.name }}">{% if can_edit or cell.has_value %}<button type="button" class="cell-value comment-button" data-readonly="{% if can_edit %}false{% else %}true{% endif %}" aria-label="{% if can_edit %}Ver o editar{% else %}Ver{% endif %} comentarios del compromiso {{ row.id }}">{{ cell.display }}</button>{% else %}<span class="cell-display comment-empty">Sin comentarios</span>{% endif %}</td>{% endif %}{% endfor %}</tr>{% empty %}<tr><td colspan="{{ columns|length|add:'2' }}" class="empty">No hay compromisos para estos filtros.</td></tr>{% endfor %}</tbody>
-</table>
-</div>{% include 'pagination.html' %}
-</section>
-<p class="muted">El vencimiento se calcula con la 3ra fecha; si está vacía, usa la 2da y luego la 1ra. El cumplimiento se basa en la fecha real; no se escribe manualmente. Las correcciones de fechas requieren motivo y conservan el historial.</p>
+<p class="page-subtitle">Situación al {{ today|date:'l d M Y' }}</p>
+
+<div class="commitment-toolbar">
+  <nav class="view-tabs" aria-label="Vistas de compromisos">
+    <a href="{{ tab_urls.accion }}" {% if vista == 'accion' %}class="active"{% endif %}>Requieren acción · {{ view_counts.accion }}</a>
+    <a href="{{ tab_urls.proximo }}" {% if vista == 'proximo' %}class="active"{% endif %}>Vencen {{ next_cut|date:'d M' }} · {{ view_counts.proximo }}</a>
+    <a href="{{ tab_urls.todos }}" {% if vista == 'todos' %}class="active"{% endif %}>Todos · {{ view_counts.todos }}</a>
+    <a href="{{ tab_urls.terminados }}" {% if vista == 'terminados' %}class="active"{% endif %}>Terminados · {{ view_counts.terminados }}</a>
+  </nav>
+  <form method="get" class="compact-search">
+    <input type="hidden" name="vista" value="{{ vista }}">
+    <label><span class="sr-only">Buscar compromiso</span><input name="q" value="{{ f.q }}" placeholder="⌕  Buscar compromiso…"></label>
+    <label><span class="sr-only">Jefatura</span><select name="jefatura" onchange="this.form.submit()"><option value="">Jefatura: Todas</option>{% for value,label in jefaturas %}<option value="{{ value }}" {% if f.jefatura == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  </form>
+</div>
+
+<div class="commitment-master-detail">
+  <section class="panel commitment-list-panel">
+    <div class="commitment-list-head"><span>Compromiso</span><span>Responsable</span><span>Fecha vigente</span><span>Cumplimiento</span><span>Reprog.</span><span></span></div>
+    <div class="commitment-list">
+      {% for c in commitments %}
+      <a class="commitment-row {% if selected.pk == c.pk %}selected{% endif %}" href="?{% if selection_query %}{{ selection_query }}&{% endif %}seleccion={{ c.pk }}">
+        <span class="status-dot" data-status="{{ c.estatus }}"></span>
+        <span class="commitment-name"><b>{{ c.tarea }}</b><small>{{ c.proyecto }}</small></span>
+        <span class="responsible"><i>{{ c.initials }}</i><b>{{ c.responsable_pyp }}</b><small>{{ c.jefatura|cut:'Jefatura de ' }}</small></span>
+        <span class="due-date"><b>{{ c.objetivo|date:'D d M'|default:'Por definir' }}</b>{% if c.situacion == 'Vencido' %}<small class="pill danger">+{{ c.days_to_due|stringformat:'d'|cut:'-' }} d atraso</small>{% elif c.situacion == 'Por vencer' %}<small class="pill warning">vence en {{ c.days_to_due }} d</small>{% elif c.situacion == 'Stand By' %}<small class="pill neutral">Stand By</small>{% else %}<small>{{ c.situacion }}</small>{% endif %}</span>
+        <span class="row-score"><b>{% if c.cumplimiento_fechas != None %}{{ c.cumplimiento_fechas|floatformat:0 }} %{% else %}—{% endif %}</b><span><i style="width:{{ c.cumplimiento_fechas|default_if_none:0|stringformat:'g' }}%"></i></span></span>
+        <span class="reschedule-count">{{ c.reprogram_count }}x</span><span class="row-more">•••</span>
+      </a>
+      {% empty %}<p class="empty">No hay compromisos para esta vista y filtros.</p>{% endfor %}
+    </div>
+    {% include 'pagination.html' %}
+  </section>
+
+  <aside class="panel commitment-inspector">
+    {% if selected %}
+    <header><h2>{{ selected.tarea }}</h2><p>Responsable: {{ selected.responsable_pyp }} · {{ selected.jefatura|cut:'Jefatura de ' }}</p></header>
+    <div class="inspector-timeline">
+      {% if selected.primera_fecha %}<div class="done"><span></span><b>{{ selected.primera_fecha|date:'d M' }}</b><small>Fecha original</small></div>{% endif %}
+      {% if selected.segunda_fecha %}<div class="done"><span></span><b>{{ selected.segunda_fecha|date:'d M' }}</b><small>Reprogramada</small></div>{% endif %}
+      {% if selected.tercera_fecha %}<div class="{% if selected.situacion == 'Vencido' %}late{% else %}done{% endif %}"><span></span><b>{{ selected.tercera_fecha|date:'d M' }}</b><small>Reprogramada</small></div>{% endif %}
+      {% if not selected.segunda_fecha and not selected.tercera_fecha and selected.objetivo %}<div class="{% if selected.situacion == 'Vencido' %}late{% else %}done{% endif %}"><span></span><b>{{ selected.objetivo|date:'d M' }}</b><small>Fecha vigente</small></div>{% endif %}
+    </div>
+    <div class="inspector-state"><span class="badge" data-status="{{ selected.situacion }}">{{ selected.situacion }}</span><a href="{% url 'detalle' selected.pk %}">Ver ficha completa →</a></div>
+    <div class="comment-history">
+      {% for item in selected.historial.all|slice:':4' %}<article><span>{{ item.usuario|first|upper }}</span><p><b>{{ item.usuario }} · {{ item.fecha|date:'d M' }}</b>{{ item.descripcion|truncatechars:150 }}</p></article>{% empty %}<p class="empty">Todavía no hay actividad registrada.</p>{% endfor %}
+    </div>
+    {% if can_edit %}<form class="quick-comment" method="post" action="{% url 'comentario_rapido' selected.pk %}">{% csrf_token %}<label>Agregar comentario<textarea name="motivo" placeholder="Escribe un comentario…" required></textarea></label><input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="button secondary">Guardar</button></form>{% endif %}
+    <div class="inspector-actions">{% if can_edit %}<a href="{% url 'editar' selected.pk %}">Editar</a><a href="{% url 'accion' selected.pk 'reprogramar' %}">Reprogramar</a>{% if selected.suspendida %}<a href="{% url 'accion' selected.pk 'reactivar' %}">Reactivar</a>{% else %}<a href="{% url 'accion' selected.pk 'suspender' %}">Stand By</a>{% endif %}{% endif %}</div>
+    {% else %}<p class="empty">Selecciona un compromiso para consultar su detalle.</p>{% endif %}
+  </aside>
+</div>
+
+<details class="advanced-filter-drawer"><summary>Más filtros y resumen</summary>
+  <div class="list-metrics"><article class="cyan"><span>Total de compromisos</span><strong>{{ k.total }}</strong></article><article class="cyan"><span>En curso</span><strong>{{ k.proceso }}</strong><small>{{ k.proceso_porcentaje|floatformat:1 }} %</small></article><article class="green"><span>Terminados</span><strong>{{ k.terminados }}</strong><small>{{ k.terminados_porcentaje|floatformat:1 }} %</small></article><article class="red"><span>Demorados / Vencidos</span><strong>{{ k.vencidos }}</strong><small>{{ k.vencidos_porcentaje|floatformat:1 }} %</small></article><article class="gray"><span>Stand By</span><strong>{{ k.suspendidos }}</strong><small>{{ k.suspendidos_porcentaje|floatformat:1 }} %</small></article></div>
+  {% include 'filters.html' %}
+</details>
+
+<details class="sheet-drawer">
+  <summary>Hoja completa editable</summary>
+  <div class="sheet-help"><div><p>{% if can_edit %}Haz clic en una celda para editar. Enter guarda · Tab guarda y avanza · Esc cancela.{% else %}Vista de consulta. Tu rol permite leer y exportar la información.{% endif %}</p></div><span id="save-status" role="status" aria-live="polite">Todos los cambios guardados</span></div>
+  <div class="score-legend"><b>Cumplimiento automático</b><span class="score-chip score-100">100 % · Primera fecha</span><span class="score-chip score-80">80 % · Segunda fecha</span><span class="score-chip score-60">60 % · Tercera o resto</span><span>Sin fecha real: —</span></div>
+  <section class="panel spreadsheet-panel"><div class="spreadsheet-scroll" tabindex="0" aria-label="Tabla de compromisos">
+  <table class="spreadsheet" id="commitment-sheet"><thead><tr><th class="row-index">N.º</th>{% for col in columns %}{% if col.kind != 'comments' %}<th data-column="{{ col.name }}" class="col-{{ col.name }}">{{ col.label }}{% if col.kind == 'readonly' %}<small>Automático</small>{% endif %}</th>{% endif %}{% endfor %}<th>Detalle</th>{% for col in columns %}{% if col.kind == 'comments' %}<th data-column="{{ col.name }}" class="col-{{ col.name }}">{{ col.label }}</th>{% endif %}{% endfor %}</tr></thead>
+  <tbody>{% for row in rows %}<tr data-id="{{ row.id }}" data-version="{{ row.version }}" data-url="{% url 'celda' row.id %}"><th class="row-index">{{ row.id }}</th>{% for cell in row.cells %}{% if cell.kind != 'comments' %}<td data-field="{{ cell.name }}" data-kind="{{ cell.kind }}" {% if cell.name == 'status' %}data-status="{{ cell.value }}"{% endif %} class="col-{{ cell.name }} {% if not cell.editable %}computed{% endif %}">{% if cell.editable and can_edit %}<button type="button" class="cell-value" aria-label="Editar {{ cell.label }}">{{ cell.display }}</button>{% else %}<span class="cell-display">{{ cell.display }}</span>{% endif %}</td>{% endif %}{% endfor %}<td><a href="{% url 'detalle' row.id %}" class="detail-link">Ver ↗</a></td>{% for cell in row.cells %}{% if cell.kind == 'comments' %}<td data-field="{{ cell.name }}" data-kind="{{ cell.kind }}" class="col-{{ cell.name }}">{% if can_edit or cell.has_value %}<button type="button" class="cell-value comment-button" data-readonly="{% if can_edit %}false{% else %}true{% endif %}">{{ cell.display }}</button>{% else %}<span class="cell-display comment-empty">Sin comentarios</span>{% endif %}</td>{% endif %}{% endfor %}</tr>{% empty %}<tr><td colspan="{{ columns|length|add:'2' }}" class="empty">No hay compromisos para estos filtros.</td></tr>{% endfor %}</tbody></table>
+  </div></section>
+</details>
+
 {% csrf_token %}{{ rows|json_script:'grid-rows' }}{{ grid_options|json_script:'grid-options' }}
-<script src="{% static 'js/grid.js' %}?v=comments-20261006" defer></script>
+<script src="{% static 'js/grid.js' %}?v=comments-20261006-executive" defer></script>
 {% endblock %}

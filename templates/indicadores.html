@@ -1,37 +1,35 @@
 {% extends 'base.html' %}{% load static %}
+{% block heading_actions %}
+<form method="get" class="cut-selector"><input type="hidden" name="vista" value="{{ vista }}"><label for="indicator-cut">{% if vista == 'historico' %}Periodo{% else %}Corte{% endif %}</label><select id="indicator-cut" name="corte" data-auto-submit>{% for option in cut_options %}<option value="{{ option.value }}" {% if option.value == cut.isoformat %}selected{% endif %}>{% if vista == 'historico' %}Periodo: {% endif %}{{ option.label }}</option>{% endfor %}</select></form>
+{% endblock %}
 {% block content %}
-<p class="intro">Convierte el seguimiento en decisiones. Todos los resultados responden a los filtros seleccionados.</p>
-{% include 'filters.html' %}
+<nav class="indicator-tabs" aria-label="Tipo de indicadores"><a href="?vista=gestion" {% if vista == 'gestion' %}class="active"{% endif %}>Gestión</a><a href="?vista=historico" {% if vista == 'historico' %}class="active"{% endif %}>Histórico</a></nav>
 
-<div class="indicator-highlights">
-  <article class="ring-card cyan">
-    <div><span>Cumplimiento general</span><strong>{{ k.cumplimiento_fechas|floatformat:1|default:'—' }} %</strong><small>Promedio de cierres por fechas</small></div>
-    <div class="ring" style="--percent:{{ k.cumplimiento_fechas|default_if_none:0|floatformat:'2u' }}"><span>{{ k.cumplimiento_fechas|floatformat:1|default:'—' }} %</span></div>
-  </article>
-  <article class="ring-card purple">
-    <div><span>Avance de compromisos</span><strong>{{ k.cumplimiento_cierre|floatformat:1 }} %</strong><small>Terminados / aplicables sin suspensión</small></div>
-    <div class="ring" style="--percent:{{ k.cumplimiento_cierre|floatformat:'2u' }}"><span>{{ k.cumplimiento_cierre|floatformat:1 }} %</span></div>
-  </article>
+{% if vista == 'gestion' %}
+<div class="management-kpis">
+  <article class="panel primary"><span>Cumplimiento del corte</span><strong>{{ executive.compliance|floatformat:0 }} %</strong><p>{{ executive.on_time_count }} de {{ executive.due_count }} a tiempo · Meta 95 %</p><div class="target-progress"><i style="width:{{ executive.compliance|stringformat:'g' }}%"></i><b>95 %</b></div><small class="{% if executive.variation < 0 %}negative{% else %}positive{% endif %}">{% if executive.variation < 0 %}▼{% else %}▲{% endif %} {{ executive.variation|floatformat:0 }} pp vs. corte anterior</small></article>
+  <article class="panel danger"><span>Vencidos</span><strong>{{ executive.overdue|length }}</strong><p>Requieren acción inmediata</p></article>
+  <article class="panel warning"><span>En riesgo</span><strong>{{ upcoming_cuts.risks.0 }}</strong><p>Vencen pronto o fueron reprogramados</p></article>
+  <article class="panel neutral"><span>Reprogramaciones<br>en la semana</span><strong>{{ executive.rescheduled }}</strong></article>
 </div>
 
-{{ evolucion|json_script:'trend-data' }}
-<div class="executive-trends" id="executive-trends" aria-live="polite"></div>
-<script src="{% static 'js/trends.js' %}?v=20261005-compact" defer></script>
+<section class="panel executive-chart-wide"><h2>Evolución por corte</h2><div id="weekly-cut-chart" class="svg-chart"></div></section>
+<div class="management-bottom-grid">
+  <section class="panel office-compliance"><h2>Cumplimiento por jefatura (corte)</h2>{% for office in executive.offices %}<div><span>{{ office.name }}</span><p><i class="{% if office.compliance >= 95 %}good{% else %}bad{% endif %}" style="width:{{ office.compliance|stringformat:'g' }}%"></i><b>{{ office.compliance|floatformat:0 }} % ({{ office.on_time }}/{{ office.due }})</b></p></div>{% empty %}<p class="empty">Sin datos.</p>{% endfor %}<small class="target-label-inline">Meta 95 %</small></section>
+  <section class="panel"><h2>Vencimientos por próximo corte</h2><div id="upcoming-cut-chart" class="svg-chart compact"></div></section>
+  <section class="panel"><h2>Antigüedad de vencidos</h2><div id="overdue-age-chart" class="svg-chart compact"></div></section>
+</div>
+{% else %}
+<article class="panel accumulated-card"><span>Acumulado {{ cut|date:'Y' }}</span><strong>{{ historical.accumulated|floatformat:0 }} %</strong><p>Cumplimiento en primera fecha · Meta 95 %</p></article>
+<section class="panel executive-chart-wide"><h2>Cumplimiento en primera fecha por mes</h2><div id="monthly-compliance-chart" class="svg-chart"></div></section>
+<div class="historical-bottom-grid">
+  <section class="panel"><h2>Tasa de reprogramación</h2><div id="reschedule-rate-chart" class="svg-chart compact"></div></section>
+  <section class="panel"><h2>Cumplimiento por jefatura y mes</h2><div id="office-heatmap" class="heatmap-wrap"></div></section>
+</div>
+{% endif %}
 
-{{ charts|json_script:'chart-data' }}
-<div id="charts" class="charts-grid"></div>
-<details class="more-metrics">
-  <summary>Más gráficos y métricas</summary>
-  <div id="more-charts" class="charts-grid"></div>
-  {% include 'kpis.html' %}
-</details>
+<details class="advanced-filter-drawer"><summary>Filtros y métricas adicionales</summary>{% include 'filters.html' %}{% include 'kpis.html' %}{{ charts|json_script:'chart-data' }}<div id="charts" class="charts-grid"></div><div id="more-charts" class="charts-grid"></div></details>
 
-<section class="panel">
-  <div class="panel-heading"><h2>Cumplimiento por responsable</h2></div>
-  <div class="table-wrap"><table>
-    <thead><tr><th><a data-sort="nombre" href="#">Responsable ↕</a></th><th><a data-sort="total" href="#">Total ↕</a></th><th><a data-sort="terminados" href="#">Terminados ↕</a></th><th><a data-sort="pendientes" href="#">Pendientes ↕</a></th><th><a data-sort="vencidos" href="#">Vencidos ↕</a></th><th><a data-sort="suspendidos" href="#">Stand By ↕</a></th><th><a data-sort="a_tiempo" href="#">A tiempo ↕</a></th><th><a data-sort="cumplimiento" href="#">Cumplimiento fechas % ↕</a></th><th><a data-sort="puntaje" href="#">Puntaje promedio ↕</a></th></tr></thead>
-    <tbody>{% for r in responsables %}<tr><td>{{ r.nombre }}</td><td>{{ r.total }}</td><td>{{ r.terminados }}</td><td>{{ r.pendientes }}</td><td>{{ r.vencidos }}</td><td>{{ r.suspendidos }}</td><td>{{ r.a_tiempo }}</td><td>{{ r.cumplimiento|floatformat:2 }} %</td><td>{{ r.puntaje|floatformat:2|default:'—' }}</td></tr>{% empty %}<tr><td colspan="9" class="empty">No hay datos para estos filtros.</td></tr>{% endfor %}</tbody>
-  </table></div>
-</section>
-<p class="muted">El comparativo mensual usa la primera fecha objetivo, excluye registros en Stand By y respeta los filtros aplicados. Cumplido en primera fecha significa que la fecha real fue igual o anterior a esa primera fecha. Reprogramado significa que existe segunda/tercera fecha o un evento de reprogramación. La meta es el promedio de las metas positivas registradas en los compromisos mostrados. El riesgo de atraso es vencidos / compromisos aplicables: hasta 10 % va bien, de más de 10 % a 25 % requiere atención y por encima de 25 % representa riesgo alto.</p>
+{{ weekly|json_script:'weekly-data' }}{{ upcoming_cuts|json_script:'upcoming-cut-data' }}{{ overdue_age|json_script:'overdue-age-data' }}{{ historical|json_script:'historical-data' }}
+<script src="{% static 'js/executive.js' %}?v=20261124-executive" defer></script>
 {% endblock %}

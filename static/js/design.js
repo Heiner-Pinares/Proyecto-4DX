@@ -8,3 +8,5 @@ document.querySelector('.password-toggle')?.addEventListener('click', function (
 document.querySelector('.menu-toggle')?.addEventListener('click', function () {
  const open=document.body.classList.toggle('navigation-open');this.setAttribute('aria-expanded',String(open));
 });
+
+document.querySelectorAll('[data-auto-submit]').forEach(element => element.addEventListener('change', () => element.form?.submit()));
