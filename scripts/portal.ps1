@@ -1,7 +1,7 @@
 ﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("start", "stop", "restart", "status", "logs", "validate")]
+    [ValidateSet("start", "stop", "restart", "status", "logs", "validate", "ensure")]
     [string]$Action,
 
     [ValidateRange(0, 65535)]
@@ -98,6 +98,7 @@ $script:StdoutLog = Join-Path $script:LogDir "portal.stdout.log"
 $script:StderrLog = Join-Path $script:LogDir "portal.stderr.log"
 $script:PidFile = Join-Path $script:RuntimeDir "portal.pid"
 $script:MetadataFile = Join-Path $script:RuntimeDir "portal.json"
+$script:ManualStopFile = Join-Path $script:RuntimeDir "manual-stop"
 $script:StaticRoot = Resolve-ProjectPath (Get-ConfigValue -Name "STATIC_ROOT" -DefaultValue "staticfiles")
 
 function Ensure-WritableDirectory {
@@ -395,7 +396,31 @@ function Show-PortalLogs {
     Show-LogFile -Path $script:StderrLog -Label "Errores"
 }
 
+function Set-ManualStop {
+    if (-not (Test-Path -LiteralPath $script:RuntimeDir -PathType Container)) {
+        New-Item -ItemType Directory -Path $script:RuntimeDir -Force | Out-Null
+    }
+    [IO.File]::WriteAllText(
+        $script:ManualStopFile,
+        [DateTime]::UtcNow.ToString("o"),
+        [Text.UTF8Encoding]::new($false)
+    )
+}
+
+function Clear-ManualStop {
+    Remove-Item -LiteralPath $script:ManualStopFile -Force -ErrorAction SilentlyContinue
+}
+
 function Start-Portal {
+    param([switch]$Automatic)
+
+    if ($Automatic -and (Test-Path -LiteralPath $script:ManualStopFile -PathType Leaf)) {
+        Write-Host "El inicio automático está pausado por una detención manual. Ejecuta 'portal.cmd start' para habilitarlo."
+        return
+    }
+    if (-not $Automatic) {
+        Clear-ManualStop
+    }
     $existing = Get-OwnedPortalProcess -Quiet
     if ($null -ne $existing) {
         $metadata = Read-PortalMetadata
@@ -443,6 +468,11 @@ function Start-Portal {
 }
 
 function Stop-Portal {
+    param([switch]$KeepAutomaticStart)
+
+    if (-not $KeepAutomaticStart) {
+        Set-ManualStop
+    }
     $ownedProcess = Get-OwnedPortalProcess
     if ($null -eq $ownedProcess) {
         Write-Host "El portal no está activo. No se detuvo ningún proceso."
@@ -464,6 +494,30 @@ function Stop-Portal {
     Write-Host "Portal detenido. PID anterior: $pidValue."
 }
 
+function Ensure-Portal {
+    if (Test-Path -LiteralPath $script:ManualStopFile -PathType Leaf) {
+        Write-Host "Supervisión omitida: el portal fue detenido manualmente."
+        return
+    }
+
+    $ownedProcess = Get-OwnedPortalProcess -Quiet
+    if ($null -ne $ownedProcess) {
+        $metadata = Read-PortalMetadata
+        $activePort = if ($null -ne $metadata -and $metadata.port) { [int]$metadata.port } else { $script:ResolvedPort }
+        $statusLine = Wait-PortalHttp -PortNumber $activePort -TimeoutSeconds 5
+        if ($statusLine) {
+            Write-Host "Portal saludable. PID: $($ownedProcess.ProcessId), puerto: $activePort, respuesta: $statusLine"
+            return
+        }
+
+        Write-Warning "El proceso del portal existe, pero no responde por HTTP. Se reiniciará únicamente este portal."
+        Stop-Portal -KeepAutomaticStart
+    }
+
+    Write-Warning "El portal estaba inactivo. La supervisión automática lo iniciará."
+    Start-Portal -Automatic
+}
+
 function Show-PortalStatus {
     $ownedProcess = Get-OwnedPortalProcess -Quiet
     $metadata = if ($null -ne $ownedProcess) { Read-PortalMetadata } else { $null }
@@ -477,6 +531,12 @@ function Show-PortalStatus {
         Write-Host "PID: $($ownedProcess.ProcessId)"
     }
     Write-Host "Puerto: $activePort"
+    if (Test-Path -LiteralPath $script:ManualStopFile -PathType Leaf) {
+        Write-Host "Supervisión automática: PAUSADA por detención manual"
+    }
+    else {
+        Write-Host "Supervisión automática: HABILITADA"
+    }
     Write-Host "PID file: $script:PidFile"
     Write-Host "Logs: $script:LogDir"
 }
@@ -497,4 +557,5 @@ switch ($Action.ToLowerInvariant()) {
         }
         Invoke-PortalValidation
     }
+    "ensure" { Ensure-Portal }
 }

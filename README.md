@@ -183,6 +183,18 @@ Para una comprobación previa que no inicia el servidor:
 
 Las advertencias de `check --deploy` se distinguen de los errores bloqueantes. Algunas son esperables durante una publicación HTTP interna; para acceso por proxy deben resolverse con cookies seguras, hosts explícitos y HTTPS.
 
+La tarea programada se activa al arrancar Windows y también ejecuta una
+comprobación cada minuto. Comprueba que el PID siga perteneciendo a este
+proyecto y que `/login/` responda; si el proceso se cerró o quedó sin responder,
+reinicia únicamente este portal. En el Programador de tareas es normal verla en
+estado **Ready** entre comprobaciones: ese estado indica que la acción terminó y
+espera el siguiente disparador, no que el portal esté detenido.
+
+`portal.cmd stop` crea una marca de detención intencional para que la siguiente
+comprobación no vuelva a levantar el servicio. `portal.cmd start` elimina esa
+marca y habilita de nuevo la recuperación automática. `restart` conserva este
+comportamiento de forma transparente.
+
 ## Ejecución con Docker
 
 Después de crear `secrets/oracle_password.txt`, ejecuta:

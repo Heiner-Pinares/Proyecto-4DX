@@ -176,6 +176,10 @@ function Get-RuntimePidPath {
     return (Join-Path $runtimePath "portal.pid")
 }
 
+function Get-ManualStopPath {
+    return (Join-Path (Split-Path -Parent (Get-RuntimePidPath)) "manual-stop")
+}
+
 function Restore-Task {
     param(
         [AllowNull()][string]$Xml,
@@ -233,9 +237,17 @@ try {
     if (-not $plainPassword) { throw "La contraseña de la cuenta de servicio está vacía." }
     $taskBackup = Get-TaskBackup
 
-    $arguments = '-NoLogo -NoProfile -ExecutionPolicy Bypass -File "{0}" start -Port {1}' -f $controller, $Port
+    $arguments = '-NoLogo -NoProfile -ExecutionPolicy Bypass -File "{0}" ensure -Port {1}' -f $controller, $Port
     $taskAction = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $arguments -WorkingDirectory $projectRoot
-    $trigger = New-ScheduledTaskTrigger -AtStartup
+    $startupTrigger = New-ScheduledTaskTrigger -AtStartup
+    # La acción de inicio termina después de dejar Waitress en segundo plano. Una
+    # segunda activación periódica comprueba que el proceso y /login/ sigan
+    # respondiendo y recupera el portal si se cerró después del arranque.
+    $watchdogTrigger = New-ScheduledTaskTrigger `
+        -Once `
+        -At ([DateTime]::Now.AddMinutes(1)) `
+        -RepetitionInterval (New-TimeSpan -Minutes 1) `
+        -RepetitionDuration (New-TimeSpan -Days 3650)
     $settings = New-ScheduledTaskSettingsSet `
         -StartWhenAvailable `
         -MultipleInstances IgnoreNew `
@@ -245,9 +257,9 @@ try {
 
     Register-ScheduledTask `
         -TaskName $TaskName `
-        -Description "Inicia el Portal 4DX con Waitress al arrancar Windows." `
+        -Description "Inicia el Portal 4DX al arrancar Windows y comprueba cada minuto que continúe activo." `
         -Action $taskAction `
-        -Trigger $trigger `
+        -Trigger @($startupTrigger, $watchdogTrigger) `
         -Settings $settings `
         -User $ServiceAccount `
         -Password $plainPassword `
@@ -256,6 +268,9 @@ try {
 
     Write-Host "Probando la tarea con la cuenta de servicio..."
     Invoke-Controller -Arguments @("stop", "-Port", [string]$Port)
+    # La detención anterior deja una marca para que un stop manual sea
+    # persistente. Durante la publicación sí queremos habilitar el supervisor.
+    Remove-Item -LiteralPath (Get-ManualStopPath) -Force -ErrorAction SilentlyContinue
     Start-ScheduledTask -TaskName $TaskName
     $deadline = [DateTime]::UtcNow.AddSeconds(120)
     $started = $false
@@ -283,6 +298,7 @@ try {
     }
 
     Write-Host "Tarea programada registrada y probada correctamente."
+    Write-Host "Supervisión: cada minuto; recuperación automática si el proceso se cierra o deja de responder."
     Write-Host "Tarea: $TaskName"
     Write-Host "Cuenta: $ServiceAccount"
     Write-Host "URL configurada: $($publicUri.GetLeftPart([UriPartial]::Authority))"
