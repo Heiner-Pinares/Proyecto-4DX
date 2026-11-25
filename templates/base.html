@@ -6,7 +6,7 @@
   <link rel="icon" href="{% static 'img/icon.svg' %}">
   <title>{{ title|default:'Portal de gestión de compromisos' }} · 4DX</title>
   <link rel="stylesheet" href="{% static 'css/portal.css' %}?v=20261124-executive">
-  <link rel="stylesheet" href="{% static 'css/design.css' %}?v=20261124-executive">
+  <link rel="stylesheet" href="{% static 'css/design.css' %}?v=20261125-ai">
   <script src="{% static 'js/portal.js' %}?v=20261124-executive" defer></script>
   <script src="{% static 'js/design.js' %}?v=20261124-executive" defer></script>
 </head>
@@ -47,5 +47,6 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+  {% if ai_assistant_visible %}{% include 'ai_assistant.html' %}{% endif %}
 </body>
 </html>

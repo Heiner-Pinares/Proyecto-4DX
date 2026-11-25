@@ -119,6 +119,24 @@ _teams_config = dotenv_values(BASE_DIR / ".env")
 TEAMS_WEBHOOK_URL = (_teams_config.get("TEAMS_WEBHOOK_URL") or os.getenv("TEAMS_WEBHOOK_URL", "")).strip()
 PORTAL_PUBLIC_URL = (os.getenv("PORTAL_PUBLIC_URL") or _teams_config.get("PORTAL_PUBLIC_URL", "")).strip().rstrip("/")
 
+# Asistente corporativo. La URL firmada de Power Automate es un secreto del
+# servidor y nunca se entrega a las plantillas ni al navegador.
+AI_ASSISTANT_ENABLED = flag("AI_ASSISTANT_ENABLED")
+POWER_AUTOMATE_URL = os.getenv("POWER_AUTOMATE_URL", "").strip()
+AI_REQUEST_TIMEOUT = int(os.getenv("AI_REQUEST_TIMEOUT", "90"))
+AI_MAX_INPUT_LENGTH = int(os.getenv("AI_MAX_INPUT_LENGTH", "4000"))
+AI_MAX_HISTORY_MESSAGES = int(os.getenv("AI_MAX_HISTORY_MESSAGES", "10"))
+AI_MAX_RESPONSE_LENGTH = int(os.getenv("AI_MAX_RESPONSE_LENGTH", "12000"))
+AI_RATE_LIMIT_REQUESTS = int(os.getenv("AI_RATE_LIMIT_REQUESTS", "10"))
+AI_RATE_LIMIT_WINDOW = int(os.getenv("AI_RATE_LIMIT_WINDOW", "300"))
+AI_MAX_CONCURRENT_REQUESTS = int(os.getenv("AI_MAX_CONCURRENT_REQUESTS", "2"))
+AI_DUPLICATE_CACHE_SECONDS = int(os.getenv("AI_DUPLICATE_CACHE_SECONDS", "15"))
+AI_ASSISTANT_ALLOWED_GROUPS = {
+    value.strip()
+    for value in os.getenv("AI_ASSISTANT_ALLOWED_GROUPS", "").split(",")
+    if value.strip()
+}
+
 # Conexión del relay corporativo usada por el botón de correo.
 CORREO_SSH_HOST = os.getenv("CORREO_SSH_HOST") or "172.19.30.62"
 CORREO_SSH_USER = os.getenv("CORREO_SSH_USER") or "usr_mds"

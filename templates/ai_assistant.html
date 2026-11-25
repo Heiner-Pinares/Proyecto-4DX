@@ -1,0 +1,27 @@
+{% load static %}
+<button class="ai-launcher" id="ai-launcher" type="button" aria-controls="ai-panel" aria-expanded="false" title="Asistente IA">
+  <span aria-hidden="true">✦</span><span class="sr-only">Abrir Asistente IA</span>
+</button>
+<aside class="ai-panel" id="ai-panel" aria-label="Asistente IA 4DX" aria-hidden="true" data-chat-url="{% url 'ai_chat' %}" data-history-url="{% url 'ai_history' %}" data-clear-url="{% url 'ai_clear' %}" data-max-length="{{ ai_max_input_length }}">
+  <header>
+    <div class="ai-identity"><span aria-hidden="true">✦</span><div><b>Asistente IA 4DX</b><small>Orientación del portal</small></div></div>
+    <div class="ai-window-actions"><button type="button" data-ai-action="minimize" aria-label="Minimizar">−</button><button type="button" data-ai-action="expand" aria-label="Ampliar">↗</button><button type="button" data-ai-action="close" aria-label="Cerrar">×</button></div>
+  </header>
+  <div class="ai-messages" id="ai-messages" role="log" aria-live="polite" aria-relevant="additions">
+    <article class="ai-message assistant"><div><p>Hola. Puedo orientarte sobre compromisos, estados, indicadores y reportes del Portal 4DX.</p></div></article>
+  </div>
+  <div class="ai-suggestions" aria-label="Preguntas sugeridas">
+    <button type="button">¿Para qué sirve este portal?</button>
+    <button type="button">¿Qué significa Stand By?</button>
+    <button type="button">¿Cómo se reprograma un compromiso?</button>
+    <button type="button">¿Cómo interpreto el cumplimiento?</button>
+  </div>
+  <p class="ai-status" id="ai-status" role="status"></p>
+  <form class="ai-composer" id="ai-form">
+    {% csrf_token %}
+    <label class="sr-only" for="ai-question">Escribe tu consulta</label>
+    <textarea id="ai-question" rows="2" maxlength="{{ ai_max_input_length }}" placeholder="Pregunta sobre el Portal 4DX…"></textarea>
+    <div><button class="ai-new" type="button" data-ai-action="clear">Nueva conversación</button><button class="ai-send" type="submit">Enviar <span aria-hidden="true">↑</span></button></div>
+  </form>
+</aside>
+<script src="{% static 'js/ai_assistant.js' %}?v=20261125" defer></script>

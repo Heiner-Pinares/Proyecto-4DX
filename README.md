@@ -452,6 +452,10 @@ Configura HTTPS, `DEBUG=False`, hosts y cookies seguras en producción. Mantén 
 
 SSO/Active Directory puede integrarse mediante un backend de autenticación Django que sincronice usuarios y grupos; los servicios siguen recibiendo el usuario autenticado. Quedan para fases posteriores los snapshots históricos reproducibles, la evaluación con cargas reales y la decisión de usar la última reprogramación sin límite como objetivo vigente.
 
+## Asistente IA corporativo
+
+El portal incluye un asistente opcional integrado con el flujo existente de Power Automate y AI Builder. Está desactivado de forma predeterminada, no accede a Oracle y no agrega tablas ni dependencias. La URL firmada vive únicamente en el `.env` del servidor. Consulta [ASISTENTE_IA.md](ASISTENTE_IA.md) para la configuración, controles de seguridad, pruebas, publicación y reversión.
+
 ## Paleta visual corporativa
 
 Se conservan la distribución, los controles y los flujos del portal. La paleta se define en `static/css/portal.css`: rojo `#DA291C`, rosa `#FF67B9`, cyan `#009FDF`, amarillo `#FFCB00`, naranja `#FF7500`, negro `#000000` y blanco `#FFFFFF`. Fondos suaves y separadores son mezclas de estos colores con blanco; los gráficos utilizan las mismas variables. Los botones principales son rojos con texto blanco; las superficies cyan, rosa, amarilla y naranja usan texto negro.

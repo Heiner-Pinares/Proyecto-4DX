@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth
 from django.urls import include, path
 
-from compromisos import views, teams, correo
+from compromisos import views, teams, correo, ai_views
 from compromisos.authentication import PortalLoginView
 
 urlpatterns = [
@@ -20,6 +20,9 @@ urlpatterns = [
     path("reportes/semanal/", views.resumen_semanal, name="resumen_semanal"),
     path("reportes/correo/", views.correo_reporte, name="correo_reporte"),
     path("exportar/<str:formato>/", views.exportar, name="exportar"),
+    path("api/ai/chat/", ai_views.chat, name="ai_chat"),
+    path("api/ai/chat/history/", ai_views.history, name="ai_history"),
+    path("api/ai/chat/clear/", ai_views.clear, name="ai_clear"),
     path("papelera/", views.papelera, name="papelera"),
 ]
 from compromisos import accounts
